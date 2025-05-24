@@ -25,7 +25,7 @@ namespace AutoBattlerLib
         /// <param name="factionId">The faction this unit belongs to (optional)</param>
         /// <param name="position">Initial position (optional)</param>
         /// <returns>The EntityId of the created unit</returns>
-        public EntityId CreateUnit(int unitPrototypeId)
+        public Entity CreateUnit(int unitPrototypeId)
         {
             if (unitPrototypeId < 0 || unitPrototypeId >= Prototypes.unitPrototypes.Count)
                 return default;
@@ -33,7 +33,7 @@ namespace AutoBattlerLib
             UnitPrototype prototype = Prototypes.unitPrototypes[unitPrototypeId];
 
             // Create the unit entity
-            EntityId unit = _entityManager.CreateEntity();
+            Entity unit = _entityManager.CreateEntity();
 
             // Create the unit component
             UnitComponent unitComponent = new UnitComponent();
@@ -46,11 +46,11 @@ namespace AutoBattlerLib
             bool first = true;
             foreach (int formPrototypeId in prototype.FormPrototypeIds)
             {
-                EntityId form = CreateBodyFromPrototype(formPrototypeId);
+                Entity form = CreateBodyFromPrototype(formPrototypeId);
                 _entityManager.PairParentChild(unit, form);
                 if (first)
                 {
-                    unitComponent.currentForm = form;
+                    unitComponent.currentFormId = form.Id;
                     first = false;
                 }
             }
@@ -79,27 +79,33 @@ namespace AutoBattlerLib
         /// <summary>
         /// Creates a body based on a form prototype
         /// </summary>
-        private EntityId CreateBodyFromPrototype(int formPrototypeId)
+        private Entity CreateBodyFromPrototype(int formPrototypeId)
         {
             if (formPrototypeId < 0 || formPrototypeId >= Prototypes.formPrototypes.Count)
                 return default; // Return null instead of default for reference types
 
             // Create the body
-            EntityId form = new EntityId();
+            Entity form = new Entity();
 
             // Get form prototype to access loadout information
             FormPrototype formPrototype = Prototypes.formPrototypes[formPrototypeId];
-            BodyPrototype bodyPrototype = Prototypes.bodyPrototypes[formPrototype.BodyPrototypeId];
+            ref BodyPrototypes bodyPrototype = ref Prototypes.bodyPrototypes;
+            int bodyPrototypeId = formPrototype.BodyPrototypeId;
 
             //Create the body parts from the template
-            for (int i = 0; i < bodyPrototype.Heads; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Head, bodyPrototype.EyesPerHead));
-            for (int i = 0; i < bodyPrototype.Arms; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Arm));
-            if(bodyPrototype.Legs > 0) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.LowerBody, bodyPrototype.Legs));
-            if(bodyPrototype.HasChest) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Chest));
-            if(bodyPrototype.HasBeastTorso) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.BeastTorso));
-            for(int i = 0; i < bodyPrototype.Wings; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Wing));
-            for (int i = 0; i < bodyPrototype.Tails; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Tail));
-            for (int i = 0; i < bodyPrototype.TrinketSlots; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.TrinketSlot));
+            bodyPrototype.Heads.TryGetValue(bodyPrototypeId, out var headNum);
+            for (int i = 0; i < headNum; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Head, bodyPrototype.EyesPerHead[bodyPrototypeId]));
+            bodyPrototype.Arms.TryGetValue(bodyPrototypeId, out var armNum);
+            for (int i = 0; i < armNum; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Arm));
+            if(bodyPrototype.Legs.TryGetValue(bodyPrototypeId, out var legNum)) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.LowerBody, legNum));
+            if(bodyPrototype.HasChest.Contains(bodyPrototypeId)) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Chest));
+            if(bodyPrototype.HasBeastTorso.Contains(bodyPrototypeId)) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.BeastTorso));
+            bodyPrototype.Wings.TryGetValue(bodyPrototypeId, out var wingNum);
+            for (int i = 0; i < wingNum; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Wing));
+            bodyPrototype.Tails.TryGetValue(bodyPrototypeId, out var tailNum);
+            for (int i = 0; i < tailNum; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.Tail));
+            bodyPrototype.TrinketSlots.TryGetValue(bodyPrototypeId, out var trinketNum);
+            for (int i = 0; i < trinketNum; i++) _entityManager.PairParentChild(form, CreateBodyPart(BodyPartType.TrinketSlot));
 
             // Equip the body based on the loadout prototype if specified
             if (formPrototype.LoadoutPrototypeID >= 0 &&
@@ -111,9 +117,9 @@ namespace AutoBattlerLib
             return form;
         }
 
-        private EntityId CreateBodyPart(BodyPartType type)
+        private Entity CreateBodyPart(BodyPartType type)
         {
-            EntityId part = _entityManager.CreateEntity();
+            Entity part = _entityManager.CreateEntity();
             BodyPartComponent bodyPart = new BodyPartComponent
             {
                 Type = type,
@@ -124,9 +130,9 @@ namespace AutoBattlerLib
             return part;
         }
 
-        private EntityId CreateBodyPart(BodyPartType type, int subParts)
+        private Entity CreateBodyPart(BodyPartType type, int subParts)
         {
-            EntityId part = CreateBodyPart(type);
+            Entity part = CreateBodyPart(type);
             for(int i = 0; i < subParts; i++)
             {
                 _componentManager.GetComponent<BodyPartComponent>(part).State.Add(BodyPartState.Healthy);
@@ -137,9 +143,9 @@ namespace AutoBattlerLib
         /// <summary>
         /// Equips a body with items based on a loadout prototype
         /// </summary>
-        private void EquipBodyFromLoadout(EntityId form, int loadoutPrototypeId)
+        private void EquipBodyFromLoadout(Entity form, int loadoutPrototypeId)
         {
-            List<EntityId> availableSlots = _entityManager.GetChildrenWithComponent<BodyPartComponent>(form);
+            List<int> availableSlots = _entityManager.GetChildrenWithComponent<BodyPartComponent>(form);
             LoadoutPrototype loadout = Prototypes.loadoutPrototypes[loadoutPrototypeId];
 
             foreach (var equipmentId in loadout.DefaultEquipmentIds)
@@ -149,37 +155,41 @@ namespace AutoBattlerLib
 
                 for (int i = 0; i < availableSlots.Count && !equipped; i++)
                 {
-                    BodyPartComponent currentSlot = _componentManager.GetComponent<BodyPartComponent>(availableSlots[i]);
-                    if (!IsSlotValid(currentSlot.Type, Prototypes.equipmentPrototypes[equipmentId].Type))
-                        continue;
+                    if (_entityManager.GetEntity(availableSlots[i], out var part)) {
+                        BodyPartComponent currentSlot = _componentManager.GetComponent<BodyPartComponent>(part);
+                        if (!IsSlotValid(currentSlot.Type, Prototypes.equipmentPrototypes[equipmentId].Type))
+                            continue;
 
-                    if (twoHanded)
-                    {
-                        // Find a second valid slot for two-handed weapon
-                        for (int k = i + 1; k < availableSlots.Count && !equipped; k++)
+                        if (twoHanded)
                         {
-                            BodyPartComponent secondSlot = _componentManager.GetComponent<BodyPartComponent>(availableSlots[k]);
-                            if (!IsSlotValid(secondSlot.Type, Prototypes.equipmentPrototypes[equipmentId].Type))
-                                continue;
+                            // Find a second valid slot for two-handed weapon
+                            for (int k = i + 1; k < availableSlots.Count; k++)
+                            {
+                                if (_entityManager.GetEntity(availableSlots[k], out var secondPart)) {
+                                    BodyPartComponent secondSlot = _componentManager.GetComponent<BodyPartComponent>(secondPart);
+                                    if (!IsSlotValid(secondSlot.Type, Prototypes.equipmentPrototypes[equipmentId].Type))
+                                        continue;
 
-                            // Equip the two-handed weapon
+                                    // Equip the two-handed weapon
+                                    currentSlot.DefaultEquipment.EquipmentPrototypeId = equipmentId;
+                                    secondSlot.DefaultEquipment.EquipmentPrototypeId = -999; // Mark second hand as used
+
+                                    // Mark these parts as no longer available
+                                    availableSlots.RemoveAt(k);
+                                    availableSlots.RemoveAt(i);
+                                    equipped = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Equip the one-handed item
                             currentSlot.DefaultEquipment.EquipmentPrototypeId = equipmentId;
-                            secondSlot.DefaultEquipment.EquipmentPrototypeId = -999; // Mark second hand as used
 
-                            // Mark these parts as no longer available
-                            availableSlots.RemoveAt(k);
+                            // Mark this part as no longer available
                             availableSlots.RemoveAt(i);
                             equipped = true;
                         }
-                    }
-                    else
-                    {
-                        // Equip the one-handed item
-                        currentSlot.DefaultEquipment.EquipmentPrototypeId = equipmentId;
-
-                        // Mark this part as no longer available
-                        availableSlots.RemoveAt(i);
-                        equipped = true;
                     }
                 }
             }

@@ -10,8 +10,8 @@ namespace AutoBattlerLib
     {
         internal static List<UnitPrototype> unitPrototypes = new List<UnitPrototype>();
         internal static List<FormPrototype> formPrototypes = new List<FormPrototype>();
-        internal static List<Attributes> attributeTemplate = new List<Attributes>();
-        internal static List<BodyPrototype> bodyPrototypes = new List<BodyPrototype>();
+        internal static Dictionary<AttributeType, List<int>> statlines = new Dictionary<AttributeType, List<int>>();
+        internal static BodyPrototypes bodyPrototypes = new BodyPrototypes();
         internal static List<EquipmentPrototype> equipmentPrototypes = new List<EquipmentPrototype>();
         internal static List<LoadoutPrototype> loadoutPrototypes = new List<LoadoutPrototype>();
     }

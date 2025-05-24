@@ -59,8 +59,8 @@ namespace AutoBattlerLib
         public int Width { get; }
         public int Height { get; }
 
-        private EntityId[,] terrainGrid;
-        private EntityId[,] unitGrid;
+        private Entity[,] terrainGrid;
+        private Entity[,] unitGrid;
 
         public GridSystem(EntityManager entityManager, ComponentManager componentManager,
                           EventSystem eventSystem, int width, int height)
@@ -69,16 +69,16 @@ namespace AutoBattlerLib
             Width = width;
             Height = height;
 
-            terrainGrid = new EntityId[width, height];
-            unitGrid = new EntityId[width, height];
+            terrainGrid = new Entity[width, height];
+            unitGrid = new Entity[width, height];
 
             // Initialize with default values
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
-                    terrainGrid[x, y] = new EntityId(-1); // Invalid ID
-                    unitGrid[x, y] = new EntityId(-1);    // Invalid ID
+                    terrainGrid[x, y] = new Entity(-1); // Invalid ID
+                    unitGrid[x, y] = new Entity(-1);    // Invalid ID
                 }
             }
         }
@@ -86,7 +86,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Places a terrain entity on the grid
         /// </summary>
-        public bool PlaceTerrainAt(EntityId entityId, int x, int y)
+        public bool PlaceTerrainAt(Entity entityId, int x, int y)
         {
             if (!IsInBounds(x, y))
             {
@@ -102,7 +102,7 @@ namespace AutoBattlerLib
             else
             {
                 // If the entity already has a position, update terrain grid at old position
-                terrainGrid[position.X, position.Y] = new EntityId(-1);
+                terrainGrid[position.X, position.Y] = new Entity(-1);
 
                 // Update position component
                 position.X = x;
@@ -118,7 +118,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Places a unit entity on the grid
         /// </summary>
-        public bool PlaceUnitAt(EntityId entityId, int x, int y)
+        public bool PlaceUnitAt(Entity entityId, int x, int y)
         {
             if (!IsInBounds(x, y))
             {
@@ -142,7 +142,7 @@ namespace AutoBattlerLib
                 // If the entity already has a position, update unit grid at old position
                 if (IsInBounds(position.X, position.Y))
                 {
-                    unitGrid[position.X, position.Y] = new EntityId(-1);
+                    unitGrid[position.X, position.Y] = new Entity(-1);
                 }
 
                 // Update position component
@@ -159,11 +159,11 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets the unit at the specified grid position
         /// </summary>
-        public EntityId GetUnitAt(int x, int y)
+        public Entity GetUnitAt(int x, int y)
         {
             if (!IsInBounds(x, y))
             {
-                return new EntityId(-1);
+                return new Entity(-1);
             }
 
             return unitGrid[x, y];
@@ -172,11 +172,11 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets the terrain at the specified grid position
         /// </summary>
-        public EntityId GetTerrainAt(int x, int y)
+        public Entity GetTerrainAt(int x, int y)
         {
             if (!IsInBounds(x, y))
             {
-                return new EntityId(-1);
+                return new Entity(-1);
             }
 
             return terrainGrid[x, y];
@@ -185,7 +185,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Removes a unit from the grid
         /// </summary>
-        public bool RemoveUnit(EntityId entityId)
+        public bool RemoveUnit(Entity entityId)
         {
             if (!ComponentManager.TryGetComponent<PositionComponent>(entityId, out var position))
             {
@@ -194,7 +194,7 @@ namespace AutoBattlerLib
 
             if (IsInBounds(position.X, position.Y) && unitGrid[position.X, position.Y].Equals(entityId))
             {
-                unitGrid[position.X, position.Y] = new EntityId(-1);
+                unitGrid[position.X, position.Y] = new Entity(-1);
                 return true;
             }
 

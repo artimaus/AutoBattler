@@ -47,7 +47,7 @@ namespace AutoBattlerLib
     public class BodyPartComponent : IComponent
     {
         public BodyPartType Type { get; set; }
-        public List<BodyPartState> State { get; set; } = new List<BodyPartState>(); // element zero is always the state of the main bodypart and subsequent elements are subparts
+        public BodyPartState[] State { get; set; } // element zero is always the state of the main bodypart and subsequent elements are subparts
         public ref Equipment DefaultEquipment => ref _defaultEquipment;
         private Equipment _defaultEquipment; // Private backing field
 
@@ -83,7 +83,7 @@ namespace AutoBattlerLib
     /// </summary>
     public class UnitComponent : IComponent
     {
-        public EntityId currentForm { get; set; }
+        public int[] Forms { get; set; }
         public string Name { get; set; } // needs work
     }
 
@@ -125,65 +125,30 @@ namespace AutoBattlerLib
         }
     }
 
-    public struct Attributes
+    public enum AttributeType
     {
-        public int Size { get; set; }
-        public int Strength { get; set; }
-        public int Dexterity { get; set; }
-        public int Agility { get; set; }
-        public int Stamina { get; set; }
-        public int Toughness { get; set; }
-        public int Will { get; set; }
-        public int Constitution { get; set; }
-
-        public Attributes(
-            int size = 4,
-            int strength = 10,
-            int dexterity = 10,
-            int agility = 10,
-            int stamina = 4,
-            int toughness = 10,
-            int will = 10,
-            int constitution = 10)
-        {
-            Size = size;
-            Strength = strength;
-            Dexterity = dexterity;
-            Agility = agility;
-            Stamina = stamina;
-            Toughness = toughness;
-            Will = will;
-            Constitution = constitution;
-        }
+        Size,
+        Strength,
+        Dexterity,
+        Agility,
+        Stamina,
+        Toughness,
+        Will,
+        Constitution
     }
 
-    public struct BodyPrototype
+    public struct BodyPrototypes
     {
-        public string Name { get; set; }
-        public int Heads { get; set; }
-        public int Arms { get; set; }
-        public int Legs { get; set; } = 2;
-        public bool HasChest { get; set; }
-        public bool HasBeastTorso { get; set; }
-        public int Wings { get; set; } = 2;
-        public int Tails { get; set; }
-        public int TrinketSlots { get; set; }
-        public int EyesPerHead { get; set; } = 1;
-
-        public BodyPrototype(string name, int heads, int arms, int legs, bool hasChest, bool hasBeastTorso,
-                             int wings, int tails, int trinketSlots, int eyesPerHead)
-        {
-            Name = name;
-            Heads = heads;
-            Arms = arms;
-            Legs = legs;
-            HasChest = hasChest;
-            HasBeastTorso = hasBeastTorso;
-            Wings = wings;
-            Tails = tails;
-            TrinketSlots = trinketSlots;
-            EyesPerHead = eyesPerHead;
-        }
+        public Dictionary<int, string> Name { get; set; }
+        public Dictionary<int, int> Heads { get; set; }
+        public Dictionary<int, int> Arms { get; set; }
+        public Dictionary<int, int> Legs { get; set; }
+        public HashSet<int> HasChest { get; set; }
+        public HashSet<int> HasBeastTorso { get; set; }
+        public Dictionary<int, int> Wings { get; set; }
+        public Dictionary<int, int> Tails { get; set; }
+        public Dictionary<int, int> TrinketSlots { get; set; }
+        public Dictionary<int, int> EyesPerHead { get; set; } // when loading BodyPrototypes in, make sure that this is at least zero if heads > 0
     }
 
     public struct LoadoutPrototype

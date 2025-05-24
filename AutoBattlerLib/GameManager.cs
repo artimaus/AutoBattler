@@ -124,7 +124,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Moves a unit to a new position
         /// </summary>
-        public MovementResult MoveUnit(EntityId unitId, int x, int y)
+        public MovementResult MoveUnit(Entity unitId, int x, int y)
         {
             if (!gameInProgress)
             {
@@ -150,7 +150,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Performs an attack between two units
         /// </summary>
-        public CombatResult AttackUnit(EntityId attackerId, EntityId defenderId)
+        public CombatResult AttackUnit(Entity attackerId, Entity defenderId)
         {
             if (!gameInProgress)
             {
@@ -195,7 +195,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets all valid movement destinations for a unit
         /// </summary>
-        public List<GridPosition> GetValidMoveDestinations(EntityId unitId)
+        public List<GridPosition> GetValidMoveDestinations(Entity unitId)
         {
             return movementSystem.GetValidMoveDestinations(unitId);
         }
@@ -203,7 +203,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets all valid attack targets for a unit
         /// </summary>
-        public List<EntityId> GetValidAttackTargets(EntityId unitId)
+        public List<Entity> GetValidAttackTargets(Entity unitId)
         {
             return combatSystem.GetValidAttackTargets(unitId);
         }
@@ -280,7 +280,7 @@ namespace AutoBattlerLib
             foreach (var entityData in gameData.Entities)
             {
                 // Create entity with specific ID (this would require extending EntityManager)
-                var entityId = new EntityId(entityData.Id);
+                var entityId = new Entity(entityData.Id);
 
                 // Add components
                 foreach (var componentPair in entityData.Components)
@@ -346,7 +346,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets the unit at a specific position
         /// </summary>
-        public EntityId GetUnitAt(int x, int y)
+        public Entity GetUnitAt(int x, int y)
         {
             return gridSystem.GetUnitAt(x, y);
         }
@@ -354,7 +354,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets the terrain at a specific position
         /// </summary>
-        public EntityId GetTerrainAt(int x, int y)
+        public Entity GetTerrainAt(int x, int y)
         {
             return gridSystem.GetTerrainAt(x, y);
         }
@@ -370,7 +370,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets the component of the specified type for an entity
         /// </summary>
-        public T GetComponent<T>(EntityId entityId) where T : IComponent
+        public T GetComponent<T>(Entity entityId) where T : IComponent
         {
             return componentManager.GetComponent<T>(entityId);
         }

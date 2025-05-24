@@ -87,7 +87,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Processes AI for a single unit
         /// </summary>
-        private void ProcessUnitAI(EntityId unitId)
+        private void ProcessUnitAI(Entity unitId)
         {
             // Check for valid attack targets
             var attackTargets = combatSystem.GetValidAttackTargets(unitId);
@@ -108,7 +108,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Moves a unit towards the closest enemy
         /// </summary>
-        private void MoveUnitTowardsEnemy(EntityId unitId)
+        private void MoveUnitTowardsEnemy(Entity unitId)
         {
             if (!ComponentManager.TryGetComponent<PositionComponent>(unitId, out var position))
             {
@@ -136,7 +136,7 @@ namespace AutoBattlerLib
             }
 
             // Find the closest enemy
-            EntityId closestEnemy = enemyUnits[0];
+            Entity closestEnemy = enemyUnits[0];
             int closestDistance = int.MaxValue;
 
             foreach (var enemyId in enemyUnits)
@@ -181,7 +181,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets all units belonging to a faction
         /// </summary>
-        private List<EntityId> GetFactionUnits(int factionId)
+        private List<Entity> GetFactionUnits(int factionId)
         {
             var units = ComponentManager.GetEntitiesWithComponents<UnitComponent, FactionComponent>();
 
@@ -195,7 +195,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets all units belonging to enemy factions
         /// </summary>
-        private List<EntityId> GetEnemyUnits(int factionId)
+        private List<Entity> GetEnemyUnits(int factionId)
         {
             var units = ComponentManager.GetEntitiesWithComponents<UnitComponent, FactionComponent>();
 

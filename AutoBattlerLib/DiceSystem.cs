@@ -8,7 +8,7 @@ namespace AutoBattlerLib
 {
     internal static class Dice
     {
-        public static int Roll(EntityId unit, ComponentManager _componentManager)
+        public static int Roll(Entity unit, ComponentManager _componentManager)
         {
             if (_componentManager.HasComponent<FortuneComponent>(unit))
             {

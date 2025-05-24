@@ -17,76 +17,50 @@ namespace AutoBattlerLib
             _entityManager = entityManager;
         }
 
-        public int GetCurrentSize(EntityId form)
+        public int GetFormAttribute(Entity form, AttributeType type)
         {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Size;
+
+            return Prototypes.statlines[type][_componentManager.GetComponent<FormComponent>(form).AttributesId];
         }
 
-        public int GetCurrentStrength(EntityId form)
+        public int GetFormCombatSpeed(Entity form)
         {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Strength;
-        }
-        public int GetCurrentDexterity(EntityId form)
-        {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Dexterity;
-        }
-        public int GetCurrentAgility(EntityId form)
-        {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Agility;
-        }
-        public int GetCurrentStamina(EntityId form)
-        {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Stamina;
-        }
-        public int GetCurrentToughness(EntityId form)
-        {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Toughness;
-        }
-        public int GetCurrentWill(EntityId form)
-        {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Will;
-        }
-        public int GetCurrentConstitution(EntityId form)
-        {
-            return Prototypes.attributeTemplate[_componentManager.GetComponent<FormComponent>(form).AttributesId].Constitution;
-        }
-        public int GetCurrentCombatSpeed(EntityId form)
-        {
-            return (int)(GetCurrentSize(form) / 2.0 + GetCurrentAgility(form) / 2.0 +
+            return (int)(GetFormAttribute(form, AttributeType.Size) / 2.0 + GetFormAttribute(form, AttributeType.Agility) / 2.0 +
                 (GetAthleticism(form) + 1) / 2.0) + 1;
         }
-        public int GetAthleticism(EntityId form)
+        public int GetAthleticism(Entity form)
         {
             return _componentManager.GetComponent<ProficienciesComponent>(form).Athleticism;
         }
-        public int GetStrikingSkill(EntityId form)
+        public int GetStrikingSkill(Entity form)
         {
             return _componentManager.GetComponent<ProficienciesComponent>(form).StrikingSkill;
         }
-        public int GetParryingSkill(EntityId form)
+        public int GetParryingSkill(Entity form)
         {
             return _componentManager.GetComponent<ProficienciesComponent>(form).ParryingSkill;
         }
-        public int GetEvasionSkill(EntityId form)
+        public int GetEvasionSkill(Entity form)
         {
             return _componentManager.GetComponent<ProficienciesComponent>(form).EvasionSkill;
         }
-        public int GetBlockingSkill(EntityId form)
+        public int GetBlockingSkill(Entity form)
         {
             return _componentManager.GetComponent<ProficienciesComponent>(form).BlockingSkill;
         }
-        public int GetCurrentMaxHealth(EntityId form)
+        public int GetCurrentMaxHealth(Entity form)
         {
-            return (int)(GetCurrentSize(form) * ((GetCurrentConstitution(form) / 5.0) +
-                (GetCurrentToughness(form) / 10.0)));
+            return (int)(GetFormAttribute(form, AttributeType.Size) * 
+                ((GetFormAttribute(form, AttributeType.Constitution) / 5.0) +
+                (GetFormAttribute(form, AttributeType.Toughness) / 10.0)));
         }
-        public EntityId GetCurrentForm(EntityId unit)
+        public Entity GetCurrentForm(Entity unit)
         {
             var unitComponent = _componentManager.GetComponent<UnitComponent>(unit);
 
             return unitComponent.currentForm;
         }
-        public List<EntityId> GetCurrentEquipment(List<IComponent> body)
+        public List<Entity> GetCurrentEquipment(List<IComponent> body)
         {
 
         }

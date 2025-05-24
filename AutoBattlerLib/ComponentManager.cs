@@ -16,47 +16,47 @@ namespace AutoBattlerLib
     /// </summary>
     public class ComponentManager
     {
-        public Dictionary<Type, Dictionary<EntityId, IComponent>> components =
-            new Dictionary<Type, Dictionary<EntityId, IComponent>>();
+        public Dictionary<Type, Dictionary<int, IComponent>> components =
+            new Dictionary<Type, Dictionary<int, IComponent>>();
 
         /// <summary>
         /// Adds a component to an entity
         /// </summary>
-        public EntityId AddComponent<T>(EntityId entityId, T component) where T : IComponent
+        public Entity AddComponent<T>(Entity entityId, T component) where T : IComponent
         {
             var type = typeof(T);
 
             if (!components.ContainsKey(type))
             {
-                components[type] = new Dictionary<EntityId, IComponent>();
+                components[type] = new Dictionary<int, IComponent>();
             }
             /// Check if the entity already has a component of this type
-            components[type][entityId] = component;
+            components[type][entityId.Id] = component;
             return entityId;
         }
 
         /// <summary>
         /// Removes a component from an entity
         /// </summary>
-        public void RemoveComponent<T>(EntityId entityId) where T : IComponent
+        public void RemoveComponent<T>(Entity entityId) where T : IComponent
         {
             var type = typeof(T);
 
             if (components.ContainsKey(type))
             {
-                components[type].Remove(entityId);
+                components[type].Remove(entityId.Id);
             }
         }
 
         /// <summary>
         /// Gets a component from an entity
         /// </summary>
-        public T GetComponent<T>(EntityId entityId) where T : IComponent
+        public T GetComponent<T>(Entity entityId) where T : IComponent
         {
             var type = typeof(T);
             if (components.TryGetValue(type, out var entityComponents))
             {
-                if (entityComponents.TryGetValue(entityId, out var component))
+                if (entityComponents.TryGetValue(entityId.Id, out var component))
                 {
                     return (T)component;
                 }
@@ -67,14 +67,14 @@ namespace AutoBattlerLib
         /// <summary>
         /// Tries to get a component from an entity
         /// </summary>
-        public bool TryGetComponent<T>(EntityId entityId, out T component) where T : IComponent
+        public bool TryGetComponent<T>(Entity entityId, out T component) where T : IComponent
         {
             var type = typeof(T);
             component = default;
 
             if (components.TryGetValue(type, out var entityComponents))
             {
-                if (entityComponents.TryGetValue(entityId, out var comp))
+                if (entityComponents.TryGetValue(entityId.Id, out var comp))
                 {
                     component = (T)comp;
                     return true;
@@ -87,13 +87,13 @@ namespace AutoBattlerLib
         /// <summary>
         /// Checks if an entity has a component
         /// </summary>
-        public bool HasComponent<T>(EntityId entityId) where T : IComponent
+        public bool HasComponent<T>(Entity entityId) where T : IComponent
         {
             var type = typeof(T);
 
             if (components.TryGetValue(type, out var entityComponents))
             {
-                return entityComponents.ContainsKey(entityId);
+                return entityComponents.ContainsKey(entityId.Id);
             }
 
             return false;
@@ -102,11 +102,11 @@ namespace AutoBattlerLib
         /// <summary>
         /// Removes all components for an entity
         /// </summary>
-        public void RemoveAllComponents(EntityId entityId)
+        public void RemoveAllComponents(Entity entityId)
         {
             foreach (var componentDict in components.Values)
             {
-                componentDict.Remove(entityId);
+                componentDict.Remove(entityId.Id);
             }
         }
     }
