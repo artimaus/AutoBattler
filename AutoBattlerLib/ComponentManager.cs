@@ -100,6 +100,72 @@ namespace AutoBattlerLib
         }
 
         /// <summary>
+        /// Gets all children of the entity containing a specified component
+        /// </summary>
+        /// <returns>A hashset of all relevant children entity IDs</returns>
+        public List<int> GetChildrenWithComponent<T>(EntityManager _entitymanager, Entity id) where T : IComponent
+        {
+            HashSet<int> result = _entitymanager.GetChildren(id);
+            result.IntersectWith(components[typeof(T)].Keys);
+            return new List<int>(result);
+        }
+
+        /// <summary>
+        /// Gets all entities that have all of the specified component types
+        /// </summary>
+        public List<int> GetEntitiesWithComponents(params Type[] types)
+        {
+            if (types.Length == 0)
+                return new List<int>();
+
+            // Start with entities that have the first component type
+            if (!components.TryGetValue(types[0], out var firstComponentEntities))
+                return new List<int>();
+
+            var result = new HashSet<int>(firstComponentEntities.Keys);
+
+            // Filter for entities that have all remaining component types
+            for (int i = 1; i < types.Length; i++)
+            {
+                if (!components.TryGetValue(types[i], out var componentEntities))
+                    return new List<int>();
+
+                result.IntersectWith(componentEntities.Keys);
+            }
+
+            return new List<int>(result);
+        }
+
+        /// <summary>
+        /// Gets all entities that have all of the specified component types
+        /// </summary>
+        public List<int> GetEntitiesWithComponents<T1>() where T1 : IComponent
+        {
+            return GetEntitiesWithComponents(typeof(T1));
+        }
+
+        /// <summary>
+        /// Gets all entities that have all of the specified component types
+        /// </summary>
+        public List<int> GetEntitiesWithComponents<T1, T2>()
+            where T1 : IComponent
+            where T2 : IComponent
+        {
+            return GetEntitiesWithComponents(typeof(T1), typeof(T2));
+        }
+
+        /// <summary>
+        /// Gets all entities that have all of the specified component types
+        /// </summary>
+        public List<int> GetEntitiesWithComponents<T1, T2, T3>()
+            where T1 : IComponent
+            where T2 : IComponent
+            where T3 : IComponent
+        {
+            return GetEntitiesWithComponents(typeof(T1), typeof(T2), typeof(T3));
+        }
+
+        /// <summary>
         /// Removes all components for an entity
         /// </summary>
         public void RemoveAllComponents(Entity entityId)

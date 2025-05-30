@@ -123,7 +123,7 @@ namespace AutoBattlerLib
             BodyPartComponent bodyPart = new BodyPartComponent
             {
                 Type = type,
-                State = new List<BodyPartState> { BodyPartState.Healthy }, // Initialize with a default state
+                State = new BodyPartState[] { BodyPartState.Healthy }, // Initialize with a default state
                 DefaultEquipment = new Equipment { EquipmentPrototypeId = -1, State = EquipmentState.Pristine }
             };
             _componentManager.AddComponent(part, bodyPart);
@@ -133,9 +133,11 @@ namespace AutoBattlerLib
         private Entity CreateBodyPart(BodyPartType type, int subParts)
         {
             Entity part = CreateBodyPart(type);
+            BodyPartComponent bp = _componentManager.GetComponent<BodyPartComponent>(part);
+            bp.State = new BodyPartState[subParts + 1]; 
             for(int i = 0; i < subParts; i++)
             {
-                _componentManager.GetComponent<BodyPartComponent>(part).State.Add(BodyPartState.Healthy);
+                bp.State[i] = BodyPartState.Healthy;
             }
             return part;
         }
@@ -145,7 +147,7 @@ namespace AutoBattlerLib
         /// </summary>
         private void EquipBodyFromLoadout(Entity form, int loadoutPrototypeId)
         {
-            List<int> availableSlots = _entityManager.GetChildrenWithComponent<BodyPartComponent>(form);
+            List<int> availableSlots = _componentManager.GetChildrenWithComponent<BodyPartComponent>(_entityManager, form);
             LoadoutPrototype loadout = Prototypes.loadoutPrototypes[loadoutPrototypeId];
 
             foreach (var equipmentId in loadout.DefaultEquipmentIds)
