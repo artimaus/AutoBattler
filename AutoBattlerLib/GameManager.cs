@@ -370,7 +370,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets the component of the specified type for an entity
         /// </summary>
-        public T GetComponent<T>(Entity entityId) where T : IComponent
+        public T GetComponent<T>(Entity entityId) where T : IComponentData
         {
             return componentManager.GetComponent<T>(entityId);
         }

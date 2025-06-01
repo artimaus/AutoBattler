@@ -36,7 +36,7 @@ namespace AutoBattlerLib
         TrinketSlot
     }
 
-    public class FormComponent : IComponent
+    public class FormComponent : IComponentData
     {
         public bool Alive { get; set; } = true;
         public int AttributesId { get; set; } = -1;
@@ -44,26 +44,22 @@ namespace AutoBattlerLib
         public int FormPrototypeId { get; set; } = -1;
     }
 
-    public class BodyPartComponent : IComponent
+    public interface BodyPartComponent : IComponentData
     {
-        public BodyPartType Type { get; set; }
         public BodyPartState[] State { get; set; } // element zero is always the state of the main bodypart and subsequent elements are subparts
-        public ref Equipment DefaultEquipment => ref _defaultEquipment;
-        private Equipment _defaultEquipment; // Private backing field
-
     }
 
     /// <summary>
     /// A component to store leader statistics
     /// </summary>
-    public class LeaderStatComponent : IComponent
+    public class LeaderStatComponent : IComponentData
     {
         // Leadership capabilities
         public int Command { get; set; }
         public int MoraleModifier { get; set; }
     }
 
-    public class ProficienciesComponent : IComponent
+    public class ProficienciesComponent : IComponentData
     {
         // Proficiencies for this unit
         public int StrikingSkill { get; set; }
@@ -81,7 +77,7 @@ namespace AutoBattlerLib
     /// <summary>
     /// Identifies an entity as a unit with references to its forms
     /// </summary>
-    public class UnitComponent : IComponent
+    public class UnitComponent : IComponentData
     {
         public int[] Forms { get; set; }
         public string Name { get; set; } // needs work

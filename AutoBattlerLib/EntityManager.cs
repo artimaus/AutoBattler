@@ -37,12 +37,6 @@ namespace AutoBattlerLib
             return !left.Equals(right);
         }
     }
-    enum RelationshipType
-    {
-        Parent,
-        Child
-    }
-
 
     /// <summary>
     /// Manages entity creation and destruction
@@ -52,39 +46,19 @@ namespace AutoBattlerLib
 
 
         private int nextEntityId = 1;
-        private Dictionary<int, Entity> entities = new Dictionary<int, Entity>();
-        private Dictionary<Entity, Dictionary<RelationshipType, HashSet<Entity>>> entityRelationships = 
-            new Dictionary<Entity, Dictionary<RelationshipType, HashSet<Entity>>>();
-        private Queue<int> recycledIds = new Queue<int>();
+        private HashSet<Entity> entities = new HashSet<Entity>();
+        private Queue<Entity> recycledIds = new Queue<Entity>();
 
         /// <summary>
         /// Attempts to get an entity by ID
         /// </summary>
-        public bool EntityExists(int id)
-        {
-            if (entities.ContainsKey(id))
-            {
-                return true;
-            }
-            return false;   
-        }
 
         /// <summary>
         /// Attempts to get an entity by ID
         /// </summary>
         public bool EntityExists(Entity entity)
         {
-            return EntityExists(entity.Id);
-        }
-
-        public bool GetEntity(int id, out Entity entity)
-        {
-            if (entities.TryGetValue(id, out entity))
-            {
-                return true;
-            }
-            entity = default;
-            return false;
+            return entities.Contains(entity);
         }
 
         /// <summary>
@@ -99,122 +73,29 @@ namespace AutoBattlerLib
             if (recycledIds.Count > 0)
             {
                 // Use a recycled ID
-                id = new Entity(recycledIds.Dequeue());
+                entities.Add(id = recycledIds.Dequeue());
             }
             else
             {
                 // Use the next available ID
-                id = new Entity(nextEntityId++);
+                entities.Add(id = new Entity(nextEntityId++));
             }
-        
-            entities.Add(id.Id, id);
             return id;
-        }
-
-
-        public void PairParentChild(Entity parent, Entity child)
-        {
-            if (!entities.ContainsKey(parent.Id) || !entities.ContainsKey(child.Id))
-                throw new ArgumentException("Both parent and child must be valid entities.");
-
-            if (!entityRelationships.ContainsKey(parent))
-            {
-                entityRelationships.Add(parent, new Dictionary<RelationshipType, HashSet<Entity>>());
-            }
-            else if (!entityRelationships[parent].ContainsKey(RelationshipType.Child))
-            {
-                entityRelationships[parent].Add(RelationshipType.Child, new HashSet<Entity>());
-            }
-            entityRelationships[parent][RelationshipType.Child].Add(child);
-
-            
-            if (!entityRelationships.ContainsKey(child))
-            {
-                entityRelationships.Add(child, new Dictionary<RelationshipType, HashSet<Entity>>());
-            }
-            else if (!entityRelationships[child].ContainsKey(RelationshipType.Parent))
-            {
-                entityRelationships[child].Add(RelationshipType.Parent, new HashSet<Entity>());
-            }
-            entityRelationships[child][RelationshipType.Parent].Add(parent);
         }
 
         /// <summary>
         /// Destroys an entity
         /// </summary>
-        /// <param name="id">The ID of the entity to destroy</param>
-        public void DestroyEntity(ComponentManager _componentManager, Entity id)
+        /// <param name="entity">The ID of the entity to destroy</param>
+        public void DestroyEntity(ComponentManager _componentManager, Entity entity)
         {
-            if (entities.Remove(id.Id))
+            if (entities.Remove(entity))
             {
-                _componentManager.RemoveAllComponents(id);
+                _componentManager.RemoveAllComponents(entity);
                 // Add the ID's raw value to the recycled pool
-                recycledIds.Enqueue(id.Id);
-
-                if (entityRelationships.TryGetValue(id, out var e))
-                {
-                    foreach (KeyValuePair<RelationshipType, HashSet<Entity>> relationships in e) {
-                        foreach (Entity relatedEntity in relationships.Value)
-                        {
-                            if (relationships.Key == RelationshipType.Parent)
-                            {
-                                UnpairParentChild(relatedEntity, id);
-                            }
-                            else if (relationships.Key == RelationshipType.Child)
-                            {
-                                UnpairParentChild(id, relatedEntity);
-                                if (!entityRelationships.TryGetValue(relatedEntity, out var c) || (c.TryGetValue(RelationshipType.Parent, out var ps) && ps.Count < 1))
-                                {
-                                    DestroyEntity(_componentManager, relatedEntity);
-                                }
-                            }
-                        }
-                    }
-                    if (e.ContainsKey(RelationshipType.Parent))
-                    {
-                        foreach (var parentId in e[RelationshipType.Parent])
-                        {
-                            UnpairParentChild(parentId, id);
-                        }
-                    }
-
-
-
-                    if (e.ContainsKey(RelationshipType.Child))
-                    {
-                        foreach (var childId in entityRelationships[id][RelationshipType.Child])
-                        {
-                            if (entityRelationships.TryGetValue(childId, out var c) && c[RelationshipType.Parent].Count < 2)
-                            {
-                                if () {
-                                    DestroyEntity(_componentManager, childId);
-                                }
-                            }
-                            entityRelationships[childId][RelationshipType.Parent].Remove(id.Id);
-                        }
-                    }
-                    entityRelationships[RelationshipType.Child].Remove(id.Id);
-                }
-            }
-        }
-
-        private void UnpairParentChild(Entity parent, Entity child)
-        {
-            if (!entities.ContainsKey(parent.Id) || !entities.ContainsKey(child.Id))
-                throw new ArgumentException("Both parent and child must be valid entities.");
-
-            if (entityRelationships.TryGetValue(parent, out var p) && 
-                p.ContainsKey(RelationshipType.Child))
-            {
-                p[RelationshipType.Child].Remove(child);
-            }
-
-            if (entityRelationships.TryGetValue(child, out var c) && 
-                c.ContainsKey(RelationshipType.Parent))
-            {
-                c[RelationshipType.Parent].Remove(parent);
-            }
-        }
+                recycledIds.Enqueue(entity);
+             }
+         }
 
         /// <summary>
         /// Gets all active entities
@@ -223,20 +104,10 @@ namespace AutoBattlerLib
         public Entity[] GetAllEntities()
         {
             var result = new Entity[entities.Count];
-            entities.Values.CopyTo(result, 0);
+            entities.CopyTo(result, 0);
             return result;
         }
 
-
-        /// <summary>
-        /// Gets all children of the entity
-        /// </summary>
-        /// <returns>A hashset of all children entity IDs</returns>
-        public HashSet<int> GetChildren(Entity id)
-        {
-            return entityRelationships[RelationshipType.Child][id.Id];
-        }
-    
         /// <summary>
         /// Gets the number of available recycled IDs
         /// </summary>

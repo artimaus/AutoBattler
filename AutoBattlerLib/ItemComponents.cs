@@ -46,7 +46,7 @@ namespace AutoBattlerLib
         public EquipmentState State { get; set; }
     }
 
-    public class ItemComponent : IComponent
+    public class ItemComponent : IComponentData
     {
         public ref Equipment Equipment => ref _Equipment;
         private Equipment _Equipment; // Private backing field

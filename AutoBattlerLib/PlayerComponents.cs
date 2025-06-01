@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AutoBattlerLib
 {
-    internal class FactionComponent : IComponent
+    internal class FactionComponent : IComponentData
     {
     }
 }

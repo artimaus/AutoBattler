@@ -8,7 +8,7 @@ using System.Drawing;
 
 namespace AutoBattlerLib
 {
-    public class BattlefieldComponent : IComponent
+    public class BattlefieldComponent : IComponentData
     {
         ComponentManager _componentManager { get; set; }
         public List<List<List<int>>> BattlefieldTiles { get; set; } = new List<List<List<int>>>();
@@ -65,7 +65,7 @@ namespace AutoBattlerLib
         }
     }
 
-    public class BattlefieldTileComponent : IComponent
+    public class BattlefieldTileComponent : IComponentData
     {
         public List<Entity> Occupants { get; set; }
 
@@ -97,8 +97,8 @@ namespace AutoBattlerLib
     public class UnitCombatCard
     {
         public Entity Unit { get; set; }
-        public List<IComponent> Body { get; set; } = new List<IComponent>();
-        public List<Entity> Equipment { get; set; } = new List<IComponent>();
+        public List<IComponentData> Body { get; set; } = new List<IComponentData>();
+        public List<Entity> Equipment { get; set; } = new List<IComponentData>();
 
         public int CurrentHealth { get; set; }
         public int CurrentExhaustion { get; set; }

@@ -60,7 +60,7 @@ namespace AutoBattlerLib
 
             return unitComponent.currentForm;
         }
-        public List<Entity> GetCurrentEquipment(List<IComponent> body)
+        public List<Entity> GetCurrentEquipment(List<IComponentData> body)
         {
 
         }
