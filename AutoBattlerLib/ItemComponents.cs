@@ -52,6 +52,36 @@ namespace AutoBattlerLib
         private Equipment _Equipment; // Private backing field
     }
 
+    public struct EquipmentId : IEquatable<EquipmentId>
+    {
+        public int Id;
+
+        public EquipmentId(int id)
+        {
+            Id = id;
+        }
+        public bool Equals(EquipmentId other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is EquipmentId other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(EquipmentId left, EquipmentId right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(EquipmentId left, EquipmentId right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
     // Equipment prototype used for creating new equipment entities
     public struct EquipmentPrototype
     {

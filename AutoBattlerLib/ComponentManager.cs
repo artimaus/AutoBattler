@@ -59,7 +59,7 @@ namespace AutoBattlerLib
     /// </summary>
     public class ComponentManager
     {
-        public Dictionary<ComponentType, Dictionary<Component, IComponentData>> components = new Dictionary<ComponentType, Dictionary<Component, IComponentData>>();
+        public Dictionary<Component, IComponentData> components = new Dictionary<Component, IComponentData>();
         public Dictionary<Component, ComponentType> componentTypes = new Dictionary<Component, ComponentType>();
         public Dictionary<ComponentType, Dictionary<Entity, HashSet<Component>>> entityComponents = new
             Dictionary<ComponentType, Dictionary<Entity, HashSet<Component>>>();
@@ -104,7 +104,7 @@ namespace AutoBattlerLib
 
         public bool TryGetTypeOfComponent(Component component, out ComponentType type)
         {
-            if (!componentTypes.TryGetValue(component, out type) || !components[type].ContainsKey(component))
+            if (!componentTypes.TryGetValue(component, out type) || !components.ContainsKey(component))
             {
                 return false;
             }
@@ -119,17 +119,17 @@ namespace AutoBattlerLib
             if (!TryGetTypeOfComponent(component, out var type))
                 return default;
 
-            return components[type][component];
+            return components[component];
         }
 
         public IComponentData GetComponentData(Component component, ComponentType type)
         {
-            if (!components.TryGetValue(type, out var typeSet) || !typeSet.ContainsKey(component))
+            if (!components.ContainsKey(component))
             {
                 return default;
             }
 
-            return components[type][component];
+            return components[component];
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace AutoBattlerLib
                 {
                     foreach(var doomedComponent in componentType.Value[entity])
                     {
-                        components[componentType.Key].Remove(doomedComponent);
+                        components.Remove(doomedComponent);
                     }
                 }
                 componentType.Value.Remove(entity);

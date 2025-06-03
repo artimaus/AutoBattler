@@ -89,7 +89,7 @@ namespace AutoBattlerLib
 
             // Get form prototype to access loadout information
             FormPrototype formPrototype = Prototypes.formPrototypes[formPrototypeId];
-            ref BodyPrototypes bodyPrototype = ref Prototypes.bodyPrototypes;
+            ref BodyPrototype bodyPrototype = ref Prototypes.bodyPrototypes;
             int bodyPrototypeId = formPrototype.BodyPrototypeId;
 
             //Create the body parts from the template
