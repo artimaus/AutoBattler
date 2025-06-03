@@ -27,10 +27,8 @@ namespace AutoBattlerLib
     public enum BodyPartType
     {
         Head,
-        Eye,
         Arm,
         LowerBody,
-        Leg,
         Chest,
         BeastTorso,
         Wing,
@@ -44,8 +42,9 @@ namespace AutoBattlerLib
         public FormId Form { get; set; }
     }
 
-    public class BodyComponent : IComponentData
+    public class BodyPartComponent : IComponentData
     {
+        HashSet<FormId> validForm;
         BodyPartType type;
         BodyPartBlights[] blights;
     }
@@ -69,7 +68,7 @@ namespace AutoBattlerLib
     /// </summary>
     public class UnitComponent : IComponentData
     {
-        public Component Forms { get; set; }
+        public FormId CurrentForm { get; set; }
         public string Name { get; set; } // needs work
     }
 
@@ -242,8 +241,8 @@ namespace AutoBattlerLib
         public int Heads { get; set; }
         public int Arms { get; set; }
         public int Legs { get; set; }
-        public int HasChest { get; set; }
-        public int HasBeastTorso { get; set; }
+        public bool HasChest { get; set; }
+        public bool HasBeastTorso { get; set; }
         public int Wings { get; set; }
         public int Tails { get; set; }
         public int TrinketSlots { get; set; }
