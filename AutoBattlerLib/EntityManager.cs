@@ -78,7 +78,7 @@ namespace AutoBattlerLib
             else
             {
                 // Use the next available ID
-                entities.Add(id = new Entity(nextEntityId++));
+                entities.Add(id = new Entity(entities.Count));
             }
             return id;
         }

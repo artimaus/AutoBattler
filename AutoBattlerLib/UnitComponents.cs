@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace AutoBattlerLib
 {
@@ -15,7 +16,7 @@ namespace AutoBattlerLib
     }
 
     [Flags]
-    public enum BodyPartBlights
+    public enum BodyPartState
     {
         Healthy = 0,
         Damaged = 1 << 0,   // 1
@@ -26,41 +27,39 @@ namespace AutoBattlerLib
 
     public enum BodyPartType
     {
+        HeadWithNatWeapon,
         Head,
+        ArmWithNatWeapon,
         Arm,
-        LowerBody,
+        Legs,
+        LegsWithNatWeapon,
         Chest,
         BeastTorso,
         Wing,
         Tail,
+        TailLegs,
         TrinketSlot
-    }
-
-    public class FormComponent : IComponentData
-    {
-        public AttributesId Attributes { get; set; }
-        public FormId Form { get; set; }
     }
 
     public class BodyPartComponent : IComponentData
     {
-        HashSet<FormId> validForm;
         BodyPartType type;
-        BodyPartBlights[] blights;
+        HashSet<FormId> validForm;
+        byte subParts; // Number of sub-parts, e.g. number of fingers on a hand
     }
+
     public class ProficienciesComponent : IComponentData
     {
-        // Proficiencies for this unit
-        public int StrikingSkill { get; set; }
-        public int StrikingXP { get; set; }
-        public int ParryingSkill { get; set; }
-        public int ParryingXP { get; set; }
-        public int EvasionSkill { get; set; }
-        public int EvasionXP { get; set; }
-        public int BlockingSkill { get; set; }
-        public int BlockingXP { get; set; }
-        public int Athleticism { get; set; }
-        public int AthleticismXP { get; set; }
+        public ushort StrikingXP { get; set; }
+        public ushort ParryingXP { get; set; }
+        public ushort EvasionXP { get; set; }
+        public ushort BlockingXP { get; set; }
+        public ushort AthleticXP { get; set; }
+        public byte StrikingSkill { get; set; }
+        public byte ParryingSkill { get; set; }
+        public byte EvasionSkill { get; set; }
+        public byte BlockingSkill { get; set; }
+        public byte AthleticSkill{ get; set; }
     }
 
     /// <summary>
@@ -68,8 +67,10 @@ namespace AutoBattlerLib
     /// </summary>
     public class UnitComponent : IComponentData
     {
-        public FormId CurrentForm { get; set; }
         public string Name { get; set; } // needs work
+        public FormId CurrentForm { get; set; } // List of forms this unit can take
+        public EquipmentId[] Loadout { get; set; } // Equipment loadout for the unit
+
     }
 
     // Prototypes for creating new entities
@@ -77,7 +78,7 @@ namespace AutoBattlerLib
     {
         public string Name { get; set; } // May not be needed
         public FormId defaultForm { get; set; }
-
+        public LoadoutPrototypeId Loadout { get; set; } // Loadout prototype ID for the unit
         public int Command { get; set; } = -1;
         public int MoraleModifier { get; set; } = 0;
 
@@ -96,9 +97,9 @@ namespace AutoBattlerLib
 
     public struct FormId : IEquatable<FormId>
     {
-        public int Id;
+        public ushort Id;
 
-        public FormId(int id)
+        public FormId(ushort id)
         {
             Id = id;
         }
@@ -126,17 +127,8 @@ namespace AutoBattlerLib
 
     public struct FormPrototype
     {
-        public string Name { get; set; }
         public BodyPrototypeId Body { get; set; }
         public AttributesId Attributes { get; set; }
-
-        public FormPrototype(string name, int bodyPrototypeId, int attributesPrototypeId, int loadoutPrototypeId)
-        {
-            Name = name;
-            BodyPrototypeId = bodyPrototypeId;
-            AttributesId = attributesPrototypeId;
-            LoadoutPrototypeID = loadoutPrototypeId;
-        }
     }
 
     public enum TransitionType
@@ -154,9 +146,9 @@ namespace AutoBattlerLib
 
     public struct AttributesId : IEquatable<AttributesId>
     {
-        public int Id;
+        public ushort Id;
 
-        public AttributesId(int id)
+        public AttributesId(ushort id)
         {
             Id = id;
         }
@@ -184,32 +176,21 @@ namespace AutoBattlerLib
 
     public readonly struct AttributesPrototype
     {
-        private readonly int Size;
-        private readonly int Strength;
-        private readonly int Dexterity;
-        private readonly int Agility;
-        private readonly int Stamina;
-        private readonly int Toughness;
-        private readonly int Will;
-        private readonly int Constitution;
-
-        public int GetSize(AttributesId id) => Size[id.Id];
-        public int GetStrength(AttributesId id) => Strength[id.Id];
-        public int GetDexterity(AttributesId id) => Dexterity[id.Id];
-        public int GetAgility(AttributesId id) => Agility[id.Id];
-        public int GetStamina(AttributesId id) => Stamina[id.Id];
-        public int GetToughness(AttributesId id) => Toughness[id.Id];
-        public int GetWill(AttributesId id) => Will[id.Id];
-        public int GetConstitution(AttributesId id) => Constitution[id.Id];
-
-
+        private readonly byte Size;
+        private readonly byte Strength;
+        private readonly byte Dexterity;
+        private readonly byte Agility;
+        private readonly byte Stamina;
+        private readonly byte Toughness;
+        private readonly byte Will;
+        private readonly byte Constitution;
     }
 
     public struct BodyPrototypeId : IEquatable<BodyPrototypeId>
     {
         public int Id;
 
-        public BodyPrototypeId(int id)
+        public BodyPrototypeId(ushort id)
         {
             Id = id;
         }
@@ -235,25 +216,29 @@ namespace AutoBattlerLib
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BodyPrototype
     {
-        public string Name { get; set; }
-        public int Heads { get; set; }
-        public int Arms { get; set; }
-        public int Legs { get; set; }
+        public byte Heads { get; set; }
+        public byte HeadsWithNatWeapon { get; set; }
+        public byte Arms { get; set; }
+        public byte ArmsWithNatWeapon { get; set; }
+        public byte Legs { get; set; }
+        public byte LegsWithNatWeapon { get; set; }
+        public byte Wings { get; set; }
+        public byte Tails { get; set; }
+        public byte TailLegs { get; set; }
+        public byte TrinketSlots { get; set; }
+        public byte EyesPerHead { get; set; }
         public bool HasChest { get; set; }
         public bool HasBeastTorso { get; set; }
-        public int Wings { get; set; }
-        public int Tails { get; set; }
-        public int TrinketSlots { get; set; }
-        public int EyesPerHead { get; set; } // when loading BodyPrototypes in, make sure that this is at least zero if heads > 0
     }
 
     public struct LoadoutPrototypeId : IEquatable<LoadoutPrototypeId>
     {
-        public int Id;
+        public ushort Id;
 
-        public LoadoutPrototypeId(int id)
+        public LoadoutPrototypeId(ushort id)
         {
             Id = id;
         }
@@ -276,21 +261,6 @@ namespace AutoBattlerLib
         public static bool operator !=(LoadoutPrototypeId left, LoadoutPrototypeId right)
         {
             return !left.Equals(right);
-        }
-    }
-
-    public struct LoadoutPrototype
-    {
-        public string Name { get; set; }
-        // Equipment mappings for different body parts
-        public List<int> DefaultEquipmentIds { get; set; } = new List<int>();
-
-        public LoadoutPrototype(
-            string name = "",
-            List<int> defaultEquipmentIds = null)
-        {
-            Name = name;
-            DefaultEquipmentIds = defaultEquipmentIds ?? new List<int>();
         }
     }
 }

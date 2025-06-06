@@ -12,8 +12,10 @@ namespace AutoBattlerLib
         internal static AttributesPrototype[] attributes = new AttributesPrototype();
         internal static BodyPrototype[] bodyPrototypes = new BodyPrototype();
         internal static EquipmentPrototype[] equipmentPrototypes = new List<EquipmentPrototype>();
-        internal static FormPrototype[] forms = new Dictionary<FormId, FormPrototype>();
-        internal static Dictionary<FormId, FormTransition> formTransitions = new Dictionary<FormId, FormTransition>();
-        internal static Dictionary<FormId, HashSet<EquipmentId>> formPrototypeLoadouts = new Dictionary<LoadoutPrototypeId, LoadoutPrototype>();
+        internal static Dictionary<FormId, string> formNames = new Dictionary<FormId, string>();
+        internal static Dictionary<FormId, BodyPrototypeId> formBodies = new Dictionary<FormId, BodyPrototypeId>();
+        internal static Dictionary<FormId, AttributesPrototype> formAttributes = new Dictionary<FormId, AttributesPrototype>();
+        internal static Dictionary<LoadoutPrototypeId, HashSet<EquipmentId>> loadoutPrototypes = new Dictionary<LoadoutPrototypeId, HashSet<EquipmentId>>();
+        internal static Dictionary<TransitionType, Dictionary<FormId, FormId>> formTransitions = new Dictionary<TransitionType, Dictionary<FormId, FormId>>();
     }
 }

@@ -59,52 +59,54 @@ namespace AutoBattlerLib
     /// </summary>
     public class ComponentManager
     {
-        public Dictionary<Component, IComponentData> components = new Dictionary<Component, IComponentData>();
-        public Dictionary<Component, ComponentType> componentTypes = new Dictionary<Component, ComponentType>();
-        public Dictionary<ComponentType, Dictionary<Entity, HashSet<Component>>> entityComponents = new
-            Dictionary<ComponentType, Dictionary<Entity, HashSet<Component>>>();
-
+        public Dictionary<Component, Entity> componentEntityLookup = new Dictionary<Component, Entity>();
+        public Dictionary<Component, ComponentType> componentTypeLookup = new Dictionary<Component, ComponentType>();
+        public Dictionary<ComponentType, Dictionary<Entity, Dictionary<Component, IComponentData>>> components = new
+            Dictionary<ComponentType, Dictionary<Entity, Dictionary<Component, IComponentData>>>();
 
         /// <summary>
         /// Adds a component to an entity
         /// </summary>
-        public bool AddEntityComponent(Entity entity, Component component)
+        public bool AddComponentToEntity(Entity entity, KeyValuePair<Component, IComponentData> component)
         {
-            if (!TryGetTypeOfComponent(component, out var type))
+            if (!TryGetTypeOfComponent(component.Key, out var type))
             {
                 return false;
             }
 
-            if (!entityComponents.ContainsKey(type))
+            if (!components[type].ContainsKey(entity))
             {
-                entityComponents.Add(type, new Dictionary<Entity, HashSet<Component>>());
-            }
-
-            if (!entityComponents[type].ContainsKey(entity))
-            {
-                entityComponents[type][entity] = new HashSet<Component>();
+                components[type][entity] = new Dictionary<Component, IComponentData>();
             }
 
             /// Check if the entity already has a component of this type
-            return entityComponents[type][entity].Add(component);
+            return components[type][entity].TryAdd(component.Key, component.Value);
         }
 
         /// <summary>
         /// Removes a component from an entity
         /// </summary>
-        private bool RemoveEntityComponent(Entity entity, Component component)
+        private bool RemoveComponentFromEntity(Entity entity, Component component)
         {
             if (!TryGetTypeOfComponent(component, out var type) || !HasComponentType(entity, type))
             {
                 return false;
             }
 
-            return entityComponents[type][entity].Remove(component);
+            return components[type][entity].Remove(component);
         }
 
+        public bool TryGetEntityOfComponent(Component component, out Entity entity)
+        {
+            if (!componentEntityLookup.TryGetValue(component, out entity))
+            {
+                return false;
+            }
+            return true;
+        }
         public bool TryGetTypeOfComponent(Component component, out ComponentType type)
         {
-            if (!componentTypes.TryGetValue(component, out type) || !components.ContainsKey(component))
+            if (!componentTypeLookup.TryGetValue(component, out type))
             {
                 return false;
             }
@@ -118,24 +120,32 @@ namespace AutoBattlerLib
         {
             if (!TryGetTypeOfComponent(component, out var type))
                 return default;
+            if(!TryGetEntityOfComponent(component, out var entity))
+                return default;
 
-            return components[component];
+            return components[type][entity][component];
         }
 
         public IComponentData GetComponentData(Component component, ComponentType type)
         {
-            if (!components.ContainsKey(component))
-            {
+            if (!TryGetEntityOfComponent(component, out var entity))
                 return default;
-            }
 
-            return components[component];
+            return components[type][entity][component];
+        }
+
+        public IComponentData GetComponentData(Component component, ComponentType type, Entity entity)
+        {
+            if (!components[type].ContainsKey(entity))
+                return default;
+
+            return components[type][entity][component];
         }
 
         /// <summary>
         /// Tries to get components from an entity
         /// </summary>
-        public bool TryGetComponents(Entity entity, ComponentType type, out List<IComponentData> componentList)
+        public bool TryGetComponentDataOfType(Entity entity, ComponentType type, out List<IComponentData> componentList)
         {
             componentList = new List<IComponentData>();
             if (!HasComponentType(entity, type))
@@ -143,10 +153,8 @@ namespace AutoBattlerLib
                 return false;
             }
 
-            foreach (Component component in entityComponents[type][entity])
-            {
-                componentList.Add(GetComponentData(component, type));
-            }
+            componentList = components[type][entity].Values.ToList();
+
             return (componentList.Count > 0) ? true : false;
          }
 
@@ -155,9 +163,9 @@ namespace AutoBattlerLib
         /// </summary>
         public bool HasComponentType(Entity entity, ComponentType type)
         {
-            if (entityComponents.ContainsKey(type))
+            if (components.ContainsKey(type))
             {
-                return entityComponents[type].ContainsKey(entity);
+                return components[type].ContainsKey(entity);
             }
             return false;
         }
@@ -168,7 +176,7 @@ namespace AutoBattlerLib
         /// </summary>
         public List<Entity> GetEntitiesWithComponents(params ComponentType[] types)
         {
-            if (types.Length == 0 || !entityComponents.TryGetValue(types[0], out var firstTypeEntities))
+            if (types.Length == 0 || !components.TryGetValue(types[0], out var firstTypeEntities))
                 return new List<Entity>();
 
             var result = new HashSet<Entity>(firstTypeEntities.Keys);
@@ -176,7 +184,7 @@ namespace AutoBattlerLib
             // Filter for entities that have all remaining component types
             for (int i = 1; i < types.Length; i++)
             {
-                if (!entityComponents.TryGetValue(types[i], out var componentEntities))
+                if (!components.TryGetValue(types[i], out var componentEntities))
                     return new List<Entity>();
 
                 result.IntersectWith(componentEntities.Keys);
@@ -189,16 +197,18 @@ namespace AutoBattlerLib
         /// </summary>
         public void RemoveAllComponents(Entity entity)
         {
-            foreach (var componentType in entityComponents)
+            foreach (var componentType in components.Keys)
             {
-                if (componentType.Value.ContainsKey(entity))
+                if (components[componentType].ContainsKey(entity))
                 {
-                    foreach(var doomedComponent in componentType.Value[entity])
+                    foreach(var doomedComponent in components[componentType][entity].Keys)
                     {
-                        components.Remove(doomedComponent);
+                        componentEntityLookup.Remove(doomedComponent);
+                        componentTypeLookup.Remove(doomedComponent);
+                        components[componentType][entity].Remove(doomedComponent);
                     }
                 }
-                componentType.Value.Remove(entity);
+                components[componentType].Remove(entity);
             }
         }
     }

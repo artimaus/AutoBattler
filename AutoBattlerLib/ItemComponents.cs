@@ -9,18 +9,21 @@ namespace AutoBattlerLib
     /// </summary>
     public enum EquipmentType
     {
-        NaturalWeapon,
-        OneHandedWeapon,
+        NaturalHeadWeapon,
+        NaturalArmWeapon,
+        NaturalLegsWeapon,
+        NaturalTailWeapon,
         TwoHandedWeapon,
+        OneHandedWeapon,
         Shield,
         RangedWeapon,
         Helmet,
         Circlet,
-        ChestArmor,
         FullArmor,
+        ChestArmor,
+        LegArmor,
         Barding,
         Boots,
-        Greaves,
         Trinket
     }
 
@@ -40,23 +43,22 @@ namespace AutoBattlerLib
         Burning = 1 << 5
     }
 
-    public struct Equipment
+    public struct Equipment : IComponentData
     {
-        public int EquipmentPrototypeId { get; set; }
-        public EquipmentState State { get; set; }
+        public EquipmentId Id { get; set; }
     }
 
     public class ItemComponent : IComponentData
     {
-        public ref Equipment Equipment => ref _Equipment;
-        private Equipment _Equipment; // Private backing field
+        public EquipmentId EquipId { get; set; }
+        //public EffectId EffectId { get; set; } // Optional effect ID for items that apply effects
     }
 
     public struct EquipmentId : IEquatable<EquipmentId>
     {
-        public int Id;
+        public ushort Id;
 
-        public EquipmentId(int id)
+        public EquipmentId(ushort id)
         {
             Id = id;
         }
@@ -87,19 +89,9 @@ namespace AutoBattlerLib
     {
         public string Name { get; set; }
         public EquipmentType Type { get; set; }
-        public int NumAttacks { get; set; } = -1;
-        public int DamageModifier { get; set; }
-        public int AttackModifier { get; set; }
-        public int DefenseModifier { get; set; }
-
-        public EquipmentPrototype(string name, EquipmentType type, int numAttacks, int damageModifier, int attackModifier, int defenseModifier)
-        {
-            Name = name;
-            Type = type;
-            NumAttacks = numAttacks;
-            DamageModifier = damageModifier;
-            AttackModifier = attackModifier;
-            DefenseModifier = defenseModifier;
-        }
+        public sbyte NumAttacks { get; set; }
+        public sbyte DamageModifier { get; set; }
+        public sbyte AttackModifier { get; set; }
+        public sbyte DefenseModifier { get; set; }
     }
 }
