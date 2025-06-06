@@ -44,8 +44,8 @@ namespace AutoBattlerLib
     public class BodyPartComponent : IComponentData
     {
         BodyPartType type;
-        HashSet<FormId> validForm;
         byte subParts; // Number of sub-parts, e.g. number of fingers on a hand
+        HashSet<FormId> validForm;
     }
 
     public class ProficienciesComponent : IComponentData
@@ -79,20 +79,8 @@ namespace AutoBattlerLib
         public string Name { get; set; } // May not be needed
         public FormId defaultForm { get; set; }
         public LoadoutPrototypeId Loadout { get; set; } // Loadout prototype ID for the unit
-        public int Command { get; set; } = -1;
-        public int MoraleModifier { get; set; } = 0;
-
-        public UnitPrototype(string name, List<int> formPrototypeIds)
-        {
-            Name = name;
-            FormPrototypeIds = formPrototypeIds;
-        }
-
-        public UnitPrototype(string name, List<int> formPrototypeIds, int command, int moraleModifier) : this(name, formPrototypeIds)
-        {
-            Command = command;
-            MoraleModifier = moraleModifier;
-        }
+        public int Command { get; set; }
+        public int MoraleModifier { get; set; }
     }
 
     public struct FormId : IEquatable<FormId>
