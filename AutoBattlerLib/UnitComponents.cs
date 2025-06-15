@@ -15,39 +15,6 @@ namespace AutoBattlerLib
         Poison
     }
 
-    [Flags]
-    public enum BodyPartState
-    {
-        Healthy = 0,
-        Damaged = 1 << 0,   // 1
-        Crippled = 1 << 1,  // 2
-        Gone = 1 << 2,      // 4
-        Scarred = 1 << 3    // 8
-    }
-
-    public enum BodyPartType
-    {
-        HeadWithNatWeapon,
-        Head,
-        ArmWithNatWeapon,
-        Arm,
-        Legs,
-        LegsWithNatWeapon,
-        Chest,
-        BeastTorso,
-        Wing,
-        Tail,
-        TailLegs,
-        TrinketSlot
-    }
-
-    public class BodyPartComponent : IComponentData
-    {
-        BodyPartType type;
-        byte subParts; // Number of sub-parts, e.g. number of fingers on a hand
-        HashSet<FormId> validForm;
-    }
-
     public class ProficienciesComponent : IComponentData
     {
         public ushort StrikingXP { get; set; }
@@ -62,74 +29,151 @@ namespace AutoBattlerLib
         public byte AthleticSkill{ get; set; }
     }
 
-    /// <summary>
-    /// Identifies an entity as a unit with references to its forms
-    /// </summary>
-    public class UnitComponent : IComponentData
+    public readonly struct ProficienciesPrototype
     {
-        public string Name { get; set; } // needs work
-        public FormId CurrentForm { get; set; } // List of forms this unit can take
-        public EquipmentId[] Loadout { get; set; } // Equipment loadout for the unit
-
+        public readonly ushort StrikingXP;
+        public readonly ushort ParryingXP;
+        public readonly ushort EvasionXP;
+        public readonly ushort BlockingXP;
+        public readonly ushort AthleticXP;
+        public readonly byte StrikingSkill;
+        public readonly byte ParryingSkill;
+        public readonly byte EvasionSkill;
+        public readonly byte BlockingSkill;
+        public readonly byte AthleticSkill;
     }
 
-    // Prototypes for creating new entities
-    public struct UnitPrototype
-    {
-        public string Name { get; set; } // May not be needed
-        public FormId defaultForm { get; set; }
-        public LoadoutPrototypeId Loadout { get; set; } // Loadout prototype ID for the unit
-        public int Command { get; set; }
-        public int MoraleModifier { get; set; }
-    }
-
-    public struct FormId : IEquatable<FormId>
+    public struct CommanderComponent : IEquatable<CommanderComponent>, IComponentData
     {
         public ushort Id;
 
-        public FormId(ushort id)
+        public CommanderComponent(ushort id)
         {
             Id = id;
         }
-        public bool Equals(FormId other)
+        public bool Equals(CommanderComponent other)
         {
             return Id == other.Id;
         }
         public override bool Equals(object obj)
         {
-            return obj is FormId other && Equals(other);
+            return obj is CommanderComponent other && Equals(other);
         }
         public override int GetHashCode()
         {
             return Id.GetHashCode();
         }
-        public static bool operator ==(FormId left, FormId right)
+        public static bool operator ==(CommanderComponent left, CommanderComponent right)
         {
             return left.Equals(right);
         }
-        public static bool operator !=(FormId left, FormId right)
+        public static bool operator !=(CommanderComponent left, CommanderComponent right)
         {
             return !left.Equals(right);
         }
     }
 
-    public struct FormPrototype
+    public struct CommanderAttributes
     {
-        public BodyPrototypeId Body { get; set; }
-        public AttributesId Attributes { get; set; }
+        public readonly byte Command;
+        public readonly byte MoraleModifier;
+    }
+
+    public struct UnitComponent : IEquatable<UnitComponent>, IComponentData
+    {
+        public ushort Id;
+
+        public UnitComponent(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(UnitComponent other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is UnitComponent other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(UnitComponent left, UnitComponent right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(UnitComponent left, UnitComponent right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    // Prototypes for creating new entities
+    public struct UnitPrototypes
+    {
+        public string[] Name; // May not be needed
+        public FormComponent[] firstForm; // Always needed
+        public LoadoutPrototypeId[] Loadout; // Loadout prototype ID for the unit, May not be needed
+    }
+
+    public struct FormComponent : IEquatable<FormComponent>, IComponentData
+    {
+        public ushort Id;
+
+        public FormComponent(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(FormComponent other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is FormComponent other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(FormComponent left, FormComponent right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(FormComponent left, FormComponent right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    public struct FormPrototypes
+    {
+        public readonly string[] Name;
+        public readonly BodyPrototypeId[] Body;
+        public readonly NaturalWeapon[] NaturalWeapons;
+        public readonly AttributesId[] Attributes;
     }
 
     public enum TransitionType
     {
-        Voluntary,
+        Arbitrary,
         PermanentDeath,
-        TemporaryDeath
+        TemporaryDeath,
+        TemporaryDeathRevert
     }
 
-    public struct FormTransition
+    public enum AttributeType
     {
-        TransitionType type { get; set; }
-        FormId newFormId { get; set; } // The form to transition to
+        Size,
+        Strength,
+        Dexterity,
+        Agility,
+        Celerity,
+        Vigor,
+        Toughness,
+        Will,
+        Constitution
     }
 
     public struct AttributesId : IEquatable<AttributesId>
@@ -164,14 +208,15 @@ namespace AutoBattlerLib
 
     public readonly struct AttributesPrototype
     {
-        private readonly byte Size;
-        private readonly byte Strength;
-        private readonly byte Dexterity;
-        private readonly byte Agility;
-        private readonly byte Stamina;
-        private readonly byte Toughness;
-        private readonly byte Will;
-        private readonly byte Constitution;
+        public readonly byte Size;
+        public readonly byte Strength;
+        public readonly byte Dexterity;
+        public readonly byte Agility;
+        public readonly byte Celerity; // Reflexive or striking speed
+        public readonly byte Vigor;
+        public readonly byte Toughness;
+        public readonly byte Will;
+        public readonly byte Constitution;
     }
 
     public struct BodyPrototypeId : IEquatable<BodyPrototypeId>
@@ -204,22 +249,65 @@ namespace AutoBattlerLib
         }
     }
 
+    [Flags]
+    public enum BodyFlags : byte
+    {
+        None = 0,
+        BootSlot = 1 << 0,      // 1
+        HasChest = 1 << 1,      // 2
+        ChestSlot = 1 << 2,     // 4
+        HasBeastTorso = 1 << 3, // 8
+        BardingSlot = 1 << 4    // 16
+                                // 3 bits remaining for future use
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BodyPrototype
     {
-        public byte Heads { get; set; }
-        public byte HeadsWithNatWeapon { get; set; }
-        public byte Arms { get; set; }
-        public byte ArmsWithNatWeapon { get; set; }
-        public byte Legs { get; set; }
-        public byte LegsWithNatWeapon { get; set; }
-        public byte Wings { get; set; }
-        public byte Tails { get; set; }
-        public byte TailLegs { get; set; }
-        public byte TrinketSlots { get; set; }
-        public byte EyesPerHead { get; set; }
-        public bool HasChest { get; set; }
-        public bool HasBeastTorso { get; set; }
+        public byte Heads;
+        public byte EyesPerHead;
+        public byte HeadSlots; // HeadSlots + CircletOnlySLots should never be more than Heads
+        public byte CircletOnlySlots; //Circlets don't overwrite any natural weapons
+        public byte Arms;
+        public byte ArmSlots; // ArmSlots should never be more than Arms
+        public byte Legs;
+        public byte Wings;
+        public byte Tails;
+        public byte TrinketSlots;
+        public BodyFlags Flags;
+    }
+
+    public enum BodyPartType
+    {
+        Head,
+        Arm,
+        Leg,
+        Wing,
+        Tail,
+        Chest,
+        BeastTorso
+    }
+
+    public class BodyPartComponent : IComponentData 
+    {
+        public BodyPrototypeId Id { get; set; }
+        public BodyPartType Type { get; set; }
+    }
+
+    public enum BodySlotType
+    {
+        Head,
+        CircletOnly,
+        Arm,
+        Boots,
+        Chest,
+        Barding,
+        Trinket
+    }
+    public class BodySlotComponent : IComponentData
+    {
+        public Component Part { get; set; }
+        public BodySlotType Type { get; set; }
     }
 
     public struct LoadoutPrototypeId : IEquatable<LoadoutPrototypeId>

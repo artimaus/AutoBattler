@@ -3,29 +3,7 @@ using System.Collections.Generic;
 
 namespace AutoBattlerLib
 {
-    /// <summary>
-    /// Defines the types of equipment that can be equipped by units.
-    /// Each equipment can only be of one type.
-    /// </summary>
-    public enum EquipmentType
-    {
-        NaturalHeadWeapon,
-        NaturalArmWeapon,
-        NaturalLegsWeapon,
-        NaturalTailWeapon,
-        TwoHandedWeapon,
-        OneHandedWeapon,
-        Shield,
-        RangedWeapon,
-        Helmet,
-        Circlet,
-        FullArmor,
-        ChestArmor,
-        LegArmor,
-        Barding,
-        Boots,
-        Trinket
-    }
+
 
     /// <summary>
     /// Defines the possible states of equipment as a bitmask.
@@ -43,42 +21,56 @@ namespace AutoBattlerLib
         Burning = 1 << 5
     }
 
-    public struct Equipment : IComponentData
-    {
-        public EquipmentId Id { get; set; }
-    }
 
     public class ItemComponent : IComponentData
     {
-        public EquipmentId EquipId { get; set; }
+        public Equipment EquipId { get; set; }
         //public EffectId EffectId { get; set; } // Optional effect ID for items that apply effects
     }
 
-    public struct EquipmentId : IEquatable<EquipmentId>
+    /// <summary>
+    /// Defines the types of equipment that can be equipped by units.
+    /// Each equipment can only be of one type.
+    /// </summary>
+    public enum EquipmentType
+    {
+        TwoHandedWeapon,
+        OneHandedWeapon,
+        Shield,
+        RangedWeapon,
+        Helmet,
+        Circlet,
+        FullArmor,
+        ChestArmor,
+        Barding,
+        Boots,
+        Trinket
+    }
+    public struct Equipment : IEquatable<Equipment>, IComponentData
     {
         public ushort Id;
 
-        public EquipmentId(ushort id)
+        public Equipment(ushort id)
         {
             Id = id;
         }
-        public bool Equals(EquipmentId other)
+        public bool Equals(Equipment other)
         {
             return Id == other.Id;
         }
         public override bool Equals(object obj)
         {
-            return obj is EquipmentId other && Equals(other);
+            return obj is Equipment other && Equals(other);
         }
         public override int GetHashCode()
         {
             return Id.GetHashCode();
         }
-        public static bool operator ==(EquipmentId left, EquipmentId right)
+        public static bool operator ==(Equipment left, Equipment right)
         {
             return left.Equals(right);
         }
-        public static bool operator !=(EquipmentId left, EquipmentId right)
+        public static bool operator !=(Equipment left, Equipment right)
         {
             return !left.Equals(right);
         }
@@ -89,6 +81,58 @@ namespace AutoBattlerLib
     {
         public string Name { get; set; }
         public EquipmentType Type { get; set; }
+        public sbyte NumAttacks { get; set; }
+        public sbyte DamageModifier { get; set; }
+        public sbyte AttackModifier { get; set; }
+        public sbyte DefenseModifier { get; set; }
+    }
+
+    /// <summary>
+    /// Defines the types of equipment that can be equipped by units.
+    /// Each equipment can only be of one type.
+    /// </summary>
+    public enum NaturalWeaponType
+    {
+        HeadWeapon,
+        ArmWeapon,
+        LegWeapon,
+        TailWeapon
+    }
+    public struct NaturalWeapon : IEquatable<NaturalWeapon>, IComponentData
+    {
+        public ushort Id;
+
+        public NaturalWeapon(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(NaturalWeapon other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is NaturalWeapon other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(NaturalWeapon left, NaturalWeapon right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(NaturalWeapon left, NaturalWeapon right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    // Equipment prototype used for creating new equipment entities
+    public struct NaturalWeaponPrototype
+    {
+        public string Name { get; set; }
+        public NaturalWeaponType Type { get; set; }
         public sbyte NumAttacks { get; set; }
         public sbyte DamageModifier { get; set; }
         public sbyte AttackModifier { get; set; }

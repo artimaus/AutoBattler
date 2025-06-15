@@ -43,8 +43,6 @@ namespace AutoBattlerLib
     /// </summary>
     public class EntityManager
     {
-
-
         private int nextEntityId = 1;
         private HashSet<Entity> entities = new HashSet<Entity>();
         private Queue<Entity> recycledIds = new Queue<Entity>();

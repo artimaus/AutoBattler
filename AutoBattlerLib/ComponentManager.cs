@@ -11,15 +11,17 @@ namespace AutoBattlerLib
 {
     public enum ComponentType
     {
+        Unit,
+        Commander,
         Form,
+        Proficiencies,
         BodyPart,
-        LeaderStat,
-        Resistance,
-        Attributes,
-        Skill,
-        Item,
-        StatusEffect
+        BodySlot,
+        Equipment,
+        NaturalWeapon,
+        Item
     }
+
     public struct Component : IEquatable<Component>
     {
         public int Id { get; }
@@ -59,29 +61,62 @@ namespace AutoBattlerLib
     /// </summary>
     public class ComponentManager
     {
+        private int nextComponentId = 1;
+        private Queue<Component> recycledIds = new Queue<Component>();
         public Dictionary<Component, Entity> componentEntityLookup = new Dictionary<Component, Entity>();
         public Dictionary<Component, ComponentType> componentTypeLookup = new Dictionary<Component, ComponentType>();
         public Dictionary<ComponentType, Dictionary<Entity, Dictionary<Component, IComponentData>>> components = new
             Dictionary<ComponentType, Dictionary<Entity, Dictionary<Component, IComponentData>>>();
 
+        public Component CreateComponent(ComponentType type)
+        {
+            Component comp;
+            if (recycledIds.Count > 0)
+            {
+                comp = recycledIds.Dequeue();
+            }
+            else
+            {
+                comp = new Component(nextComponentId++);
+            }
+            componentTypeLookup[comp] = type;
+            return comp;
+        }
+
         /// <summary>
         /// Adds a component to an entity
         /// </summary>
-        public bool AddComponentToEntity(Entity entity, KeyValuePair<Component, IComponentData> component)
+        public Component AddNewComponentToEntity(Entity entity, IComponentData component, ComponentType type)
         {
-            if (!TryGetTypeOfComponent(component.Key, out var type))
-            {
-                return false;
-            }
+            var compId = CreateComponent(type);
 
             if (!components[type].ContainsKey(entity))
             {
                 components[type][entity] = new Dictionary<Component, IComponentData>();
             }
 
-            /// Check if the entity already has a component of this type
-            return components[type][entity].TryAdd(component.Key, component.Value);
+            components[type][entity].Add(compId, component);
+            return compId;
         }
+
+        ///// <summary>
+        ///// Adds a component to an entity
+        ///// </summary>
+        //public bool AddComponentToEntity(Entity entity, KeyValuePair<Component, IComponentData> component)
+        //{
+        //    if (!TryGetTypeOfComponent(component.Key, out var type))
+        //    {
+        //        return false;
+        //    }
+
+        //    if (!components[type].ContainsKey(entity))
+        //    {
+        //        components[type][entity] = new Dictionary<Component, IComponentData>();
+        //    }
+
+        //    /// Check if the entity already has a component of this type
+        //    return components[type][entity].TryAdd(component.Key, component.Value);
+        //}
 
         /// <summary>
         /// Removes a component from an entity
