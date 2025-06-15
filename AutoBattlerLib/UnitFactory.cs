@@ -34,7 +34,10 @@ namespace AutoBattlerLib
             _ComponentManager.AddNewComponentToEntity(entity, unitComp, ComponentType.Unit);
             _ComponentManager.AddNewComponentToEntity(entity, formId, ComponentType.Form);
             AddProficienciesComponent(entity, unitComp);
-
+            if (!(Prototypes.unitPrototypes.Loadout[unitComp.Id].Id == 0))
+            {
+                AddEquipmentFromLoadout(entity, Prototypes.unitPrototypes.Loadout[unitComp.Id]);
+            }
             return entity;
         }
 
@@ -234,6 +237,19 @@ namespace AutoBattlerLib
                     slot.Part = partCompId;
                     _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
                 }
+            }
+
+            foreach (NaturalWeapon n in Prototypes.formWeapons[form])
+            {
+                _ComponentManager.AddNewComponentToEntity(entity, n, ComponentType.NaturalWeapon);
+            }
+        }
+
+        public void AddEquipmentFromLoadout(Entity entity, LoadoutPrototypeId loadout)
+        {
+            foreach (Equipment e in Prototypes.loadoutPrototypes[loadout])
+            {
+                _ComponentManager.AddNewComponentToEntity(entity, e, ComponentType.Equipment);
             }
         }
     }

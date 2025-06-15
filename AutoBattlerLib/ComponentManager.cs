@@ -86,7 +86,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Adds a component to an entity
         /// </summary>
-        public Component AddNewComponentToEntity(Entity entity, IComponentData component, ComponentType type)
+        public Component AddNewComponentToEntity(Entity entity, IComponentData data, ComponentType type)
         {
             var compId = CreateComponent(type);
 
@@ -95,7 +95,7 @@ namespace AutoBattlerLib
                 components[type][entity] = new Dictionary<Component, IComponentData>();
             }
 
-            components[type][entity].Add(compId, component);
+            components[type][entity].Add(compId, data);
             return compId;
         }
 

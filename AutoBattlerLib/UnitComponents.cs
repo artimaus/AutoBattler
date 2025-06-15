@@ -151,7 +151,6 @@ namespace AutoBattlerLib
     {
         public readonly string[] Name;
         public readonly BodyPrototypeId[] Body;
-        public readonly NaturalWeapon[] NaturalWeapons;
         public readonly AttributesId[] Attributes;
     }
 
