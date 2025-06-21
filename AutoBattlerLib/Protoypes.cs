@@ -17,6 +17,7 @@ namespace AutoBattlerLib
         internal static CommanderAttributes[] commanderAttributes = new CommanderAttributes[20000];
         internal static Dictionary<UnitComponent, CommanderComponent> unitCommand = new Dictionary<UnitComponent, CommanderComponent>();
         internal static Dictionary<UnitComponent, ProficienciesPrototype> defaultProficiencies = new Dictionary<UnitComponent, ProficienciesPrototype>();
+        internal static Dictionary<UnitComponent, DrillingPrototype> defaultDrilling = new Dictionary<UnitComponent, DrillingPrototype>();
         internal static Dictionary<FormComponent, HashSet<NaturalWeapon>> formWeapons = new Dictionary<FormComponent, HashSet<NaturalWeapon>>();
         internal static Dictionary<LoadoutPrototypeId, HashSet<Equipment>> loadoutPrototypes = new Dictionary<LoadoutPrototypeId, HashSet<Equipment>>();
         internal static Dictionary<TransitionType, Dictionary<FormComponent, FormComponent>> formTransitions = new Dictionary<TransitionType, Dictionary<FormComponent, FormComponent>>();

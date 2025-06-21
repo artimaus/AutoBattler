@@ -33,7 +33,7 @@ namespace AutoBattlerLib
             var entity = _EntityManager.CreateEntity();
             _ComponentManager.AddNewComponentToEntity(entity, unitComp, ComponentType.Unit);
             _ComponentManager.AddNewComponentToEntity(entity, formId, ComponentType.Form);
-            AddProficienciesComponent(entity, unitComp);
+            AddExperienceComponent(entity, unitComp);
             if (!(Prototypes.unitPrototypes.Loadout[unitComp.Id].Id == 0))
             {
                 AddEquipmentFromLoadout(entity, Prototypes.unitPrototypes.Loadout[unitComp.Id]);
@@ -94,155 +94,32 @@ namespace AutoBattlerLib
         /// <summary>
         /// Adds proficiencies component with default values
         /// </summary>
-        private void AddProficienciesComponent(Entity entity, UnitComponent unitId)
+        private void AddExperienceComponent(Entity entity, UnitComponent unitId)
         {
-            ProficienciesComponent proficiencies;
-            if (Prototypes.defaultProficiencies.TryGetValue(unitId, out var profId))
+            ExperienceComponent experience;
+            if (Prototypes.defaultDrilling.TryGetValue(unitId, out var drillId))
             {
-                proficiencies = new ProficienciesComponent
+                experience = new ExperienceComponent
                 {
-                    StrikingXP = profId.StrikingXP,
-                    ParryingXP = profId.ParryingXP,
-                    EvasionXP = profId.EvasionXP,
-                    BlockingXP = profId.BlockingXP,
-                    AthleticXP = profId.AthleticXP,
-                    StrikingSkill = profId.StrikingSkill,
-                    ParryingSkill = profId.ParryingSkill,
-                    EvasionSkill = profId.EvasionSkill,
-                    BlockingSkill = profId.BlockingSkill,
-                    AthleticSkill = profId.AthleticSkill
+                    StrikingXP = drillId.BaseStrikingXP,
+                    ParryingXP = drillId.BaseParryingXP,
+                    EvasionXP = drillId.BaseEvasionXP,
+                    BlockingXP = drillId.BaseBlockingXP,
+                    AthleticXP = drillId.BaseAthleticXP
                 };
             }
             else
             {
-                proficiencies = new ProficienciesComponent
+                experience = new ExperienceComponent
                 {
                     StrikingXP = 0,
                     ParryingXP = 0,
                     EvasionXP = 0,
                     BlockingXP = 0,
-                    AthleticXP = 0,
-                    StrikingSkill = 0,
-                    ParryingSkill = 0,
-                    EvasionSkill = 0,
-                    BlockingSkill = 0,
-                    AthleticSkill = 0
+                    AthleticXP = 0
                 };
             }
-            var component = _ComponentManager.CreateComponent(ComponentType.Proficiencies);
-            _ComponentManager.AddNewComponentToEntity(entity, proficiencies, ComponentType.Proficiencies);
-        }
-
-        private void AddBodyPartComponents(Entity entity, FormComponent form)
-        {
-            BodyPrototypeId bodyId = Prototypes.formPrototypes.Body[form.Id];
-            BodyPrototype body = Prototypes.bodyPrototypes[bodyId.Id];
-            BodyPartComponent part;
-            BodySlotComponent slot;
-            Component partCompId;
-            for (int i = 0; i < body.Heads; i++)
-            {
-                part = new BodyPartComponent();
-                part.Type = BodyPartType.Head;
-                part.Id = bodyId;
-                partCompId = _ComponentManager.AddNewComponentToEntity(entity, part, ComponentType.BodyPart);
-                if (i < body.HeadSlots)
-                {
-                    slot = new BodySlotComponent();
-                    slot.Type = BodySlotType.Head;
-                    slot.Part = partCompId;
-                    _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
-                }
-                else if (i < body.CircletOnlySlots + body.HeadSlots)
-                {
-                    slot = new BodySlotComponent();
-                    slot.Type = BodySlotType.CircletOnly;
-                    slot.Part = partCompId;
-                    _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
-                }
-            }
-            for (int i = 0; i < body.Arms; i++)
-            {
-                part = new BodyPartComponent();
-                part.Type = BodyPartType.Arm;
-                part.Id = bodyId;
-                partCompId = _ComponentManager.AddNewComponentToEntity(entity, part, ComponentType.BodyPart);
-                if (i < body.ArmSlots)
-                {
-                    slot = new BodySlotComponent();
-                    slot.Type = BodySlotType.Arm;
-                    slot.Part = partCompId;
-                    _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
-                }
-            }
-            for (int i = 0; i < body.Legs; i++)
-            {
-                part = new BodyPartComponent();
-                part.Type = BodyPartType.Leg;
-                part.Id = bodyId;
-                partCompId = _ComponentManager.AddNewComponentToEntity(entity, part, ComponentType.BodyPart);
-                if (i == 0 && (body.Flags & BodyFlags.BootSlot) != 0)
-                {
-                    slot = new BodySlotComponent();
-                    slot.Type = BodySlotType.Boots;
-                    slot.Part = partCompId;
-                    _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
-                }
-            }
-            for (int i = 0; i < body.Wings; i++)
-            {
-                part = new BodyPartComponent();
-                part.Type = BodyPartType.Wing;
-                part.Id = bodyId;
-                _ComponentManager.AddNewComponentToEntity(entity, part, ComponentType.BodyPart);
-            }
-            for (int i = 0; i < body.Tails; i++)
-            {
-                part = new BodyPartComponent();
-                part.Type = BodyPartType.Tail;
-                part.Id = bodyId;
-                _ComponentManager.AddNewComponentToEntity(entity, part, ComponentType.BodyPart);
-            }
-            for (int i = 0; i < body.TrinketSlots; i++)
-            {
-                slot = new BodySlotComponent();
-                slot.Type = BodySlotType.Trinket;
-                slot.Part = new Component(-1);
-                _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
-            }
-            if ((body.Flags & BodyFlags.HasChest) != 0)
-            {
-                part = new BodyPartComponent();
-                part.Type = BodyPartType.Chest;
-                part.Id = bodyId;
-                partCompId = _ComponentManager.AddNewComponentToEntity(entity, part, ComponentType.BodyPart);
-                if ((body.Flags & BodyFlags.ChestSlot) != 0)
-                {
-                    slot = new BodySlotComponent();
-                    slot.Type = BodySlotType.Chest;
-                    slot.Part = partCompId;
-                    _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
-                }
-            }
-            if ((body.Flags & BodyFlags.HasBeastTorso) != 0)
-            {
-                part = new BodyPartComponent();
-                part.Type = BodyPartType.BeastTorso;
-                part.Id = bodyId;
-                partCompId = _ComponentManager.AddNewComponentToEntity(entity, part, ComponentType.BodyPart);
-                if ((body.Flags & BodyFlags.BardingSlot) != 0)
-                {
-                    slot = new BodySlotComponent();
-                    slot.Type = BodySlotType.Barding;
-                    slot.Part = partCompId;
-                    _ComponentManager.AddNewComponentToEntity(entity, slot, ComponentType.BodySlot);
-                }
-            }
-
-            foreach (NaturalWeapon n in Prototypes.formWeapons[form])
-            {
-                _ComponentManager.AddNewComponentToEntity(entity, n, ComponentType.NaturalWeapon);
-            }
+            _ComponentManager.AddNewComponentToEntity(entity, experience, ComponentType.Experience);
         }
 
         public void AddEquipmentFromLoadout(Entity entity, LoadoutPrototypeId loadout)

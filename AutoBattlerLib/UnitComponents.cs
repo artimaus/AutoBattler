@@ -15,32 +15,31 @@ namespace AutoBattlerLib
         Poison
     }
 
-    public class ProficienciesComponent : IComponentData
+    public class ExperienceComponent : IComponentData
     {
         public ushort StrikingXP { get; set; }
         public ushort ParryingXP { get; set; }
         public ushort EvasionXP { get; set; }
         public ushort BlockingXP { get; set; }
         public ushort AthleticXP { get; set; }
-        public byte StrikingSkill { get; set; }
-        public byte ParryingSkill { get; set; }
-        public byte EvasionSkill { get; set; }
-        public byte BlockingSkill { get; set; }
-        public byte AthleticSkill{ get; set; }
+    }
+
+    public readonly struct DrillingPrototype
+    {
+        public readonly ushort BaseStrikingXP;
+        public readonly ushort BaseParryingXP;
+        public readonly ushort BaseEvasionXP;
+        public readonly ushort BaseBlockingXP;
+        public readonly ushort BaseAthleticXP;
     }
 
     public readonly struct ProficienciesPrototype
     {
-        public readonly ushort StrikingXP;
-        public readonly ushort ParryingXP;
-        public readonly ushort EvasionXP;
-        public readonly ushort BlockingXP;
-        public readonly ushort AthleticXP;
-        public readonly byte StrikingSkill;
-        public readonly byte ParryingSkill;
-        public readonly byte EvasionSkill;
-        public readonly byte BlockingSkill;
-        public readonly byte AthleticSkill;
+        public readonly byte BaseStrikingSkill;
+        public readonly byte BaseParryingSkill;
+        public readonly byte BaseEvasionSkill;
+        public readonly byte BaseBlockingSkill;
+        public readonly byte BaseAthleticSkill;
     }
 
     public struct CommanderComponent : IEquatable<CommanderComponent>, IComponentData
@@ -207,15 +206,15 @@ namespace AutoBattlerLib
 
     public readonly struct AttributesPrototype
     {
-        public readonly byte Size;
-        public readonly byte Strength;
-        public readonly byte Dexterity;
-        public readonly byte Agility;
-        public readonly byte Celerity; // Reflexive or striking speed
-        public readonly byte Vigor;
-        public readonly byte Toughness;
-        public readonly byte Will;
-        public readonly byte Constitution;
+        public readonly byte BaseSize;
+        public readonly byte BaseStrength;
+        public readonly byte BaseDexterity;
+        public readonly byte BaseAgility;
+        public readonly byte BaseCelerity; // Reflexive or striking speed
+        public readonly byte BaseVigor;
+        public readonly byte BaseToughness;
+        public readonly byte BaseWill;
+        public readonly byte BaseConstitution;
     }
 
     public struct BodyPrototypeId : IEquatable<BodyPrototypeId>
@@ -287,12 +286,6 @@ namespace AutoBattlerLib
         BeastTorso
     }
 
-    public class BodyPartComponent : IComponentData 
-    {
-        public BodyPrototypeId Id { get; set; }
-        public BodyPartType Type { get; set; }
-    }
-
     public enum BodySlotType
     {
         Head,
@@ -302,11 +295,6 @@ namespace AutoBattlerLib
         Chest,
         Barding,
         Trinket
-    }
-    public class BodySlotComponent : IComponentData
-    {
-        public Component Part { get; set; }
-        public BodySlotType Type { get; set; }
     }
 
     public struct LoadoutPrototypeId : IEquatable<LoadoutPrototypeId>

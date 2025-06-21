@@ -14,12 +14,14 @@ namespace AutoBattlerLib
         Unit,
         Commander,
         Form,
-        Proficiencies,
+        Experience,
         BodyPart,
         BodySlot,
         Equipment,
         NaturalWeapon,
-        Item
+        Item,
+        Battlefield,
+        ScheduledAction
     }
 
     public struct Component : IEquatable<Component>
