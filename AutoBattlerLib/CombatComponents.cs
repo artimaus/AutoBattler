@@ -11,9 +11,9 @@ namespace AutoBattlerLib
     public class BattlefieldComponent : IComponentData
     {
         public Tick CurrentTick { get; set; } = new Tick(0);
-        public SortedDictionary<Tick, Queue<Entity>> Schedule { get; set; } = new SortedDictionary<Tick, Queue<Entity>>();
+        public SortedDictionary<Tick, HashSet<Entity>> Schedule { get; set; } = new SortedDictionary<Tick, HashSet<Entity>>();
         public Tick[] EntitySchedule { get; set; }
-        public UnitCard[] CombatCards { get; set; }
+        public UnitCard[] UnitCards { get; set; }
 
     }
 
@@ -58,9 +58,6 @@ namespace AutoBattlerLib
         public int WeaponCardStartIndex { get; set; } // Index in the tracker array where this unit's weapons start
         public int WeaponCardCount { get; set; } // Number of weapons this unit has in the tracker
 
-        public int NaturalWeaponCardIndexStart { get; set; } // Index in the tracker array where this unit's natural weapons start
-        public int NaturalWeaponCardCount { get; set; } // Number of natural weapons this unit has in the tracker
-
         public readonly byte Size;
         public readonly byte Strength;
         public readonly byte Dexterity;
@@ -81,29 +78,65 @@ namespace AutoBattlerLib
         public int CurrentHealth { get; set; }
         public int CurrentExhaustion { get; set; }
         public int CurrentMorale { get; set; }
-        public Tick NextAction { get; set; }
+    }
+
+    [Flags]
+    public enum ArmorFlags
+    {
+        None = 0,
+        Natural = 1 << 0,
+        Damaged = 1 << 1,
+        Broken = 1 << 2,
+        LimbDamaged = 1 << 3,
+        LimbBroken = 1 << 4
+    }
+
+    public struct ArmorCard
+    {
+        public string Name { get; set; }
+        public ArmorType Type { get; set; }
+        public sbyte AttackModifier { get; set; }
+        public sbyte DefenseModifier { get; set; }
+        public sbyte ToughnessModifier { get; set; }
+        public sbyte ArmorResilience { get; set; }
+        public ArmorFlags Flags { get; set; }
+    }
+
+    [Flags]
+    public enum WeaponFlags
+    {
+        None = 0,
+        Natural = 1 << 0,
+        Damaged = 1 << 1,
+        Broken = 1 << 2,
+        LimbDamaged = 1 << 3,
+        LimbBroken = 1 << 4
     }
 
     public struct WeaponCard
     {
         public string Name { get; set; }
-        public EquipmentType Type { get; set; }
+        public WeaponType Type { get; set; }
+        public sbyte Range { get; set; }
         public sbyte NumAttacks { get; set; }
         public sbyte DamageModifier { get; set; }
         public sbyte AttackModifier { get; set; }
         public sbyte DefenseModifier { get; set; }
+        public WeaponFlags Flags { get; set; }
     }
-    public struct NaturalWeaponCard
-    {
-        public string Name { get; set; }
-        public NaturalWeaponType Type { get; set; }
-        public sbyte NumAttacks { get; set; }
-        public sbyte DamageModifier { get; set; }
-        public sbyte AttackModifier { get; set; }
-        public sbyte DefenseModifier { get; set; }
-    }
-    public struct BodyPartCards
-    {
 
+    public struct BodyCard
+    {
+        public byte Heads;
+        public byte EyesPerHead;
+        public byte HeadSlots; // HeadSlots + CircletOnlySLots should never be more than Heads
+        public byte CircletOnlySlots; //Circlets don't overwrite any natural weapons
+        public byte Arms;
+        public byte ArmSlots; // ArmSlots should never be more than Arms
+        public byte Legs;
+        public byte Wings;
+        public byte Tails;
+        public byte TrinketSlots;
+        public BodyFlags Flags;
     }
 }

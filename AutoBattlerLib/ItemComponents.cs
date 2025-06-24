@@ -3,28 +3,54 @@ using System.Collections.Generic;
 
 namespace AutoBattlerLib
 {
-
-
-    /// <summary>
-    /// Defines the possible states of equipment as a bitmask.
-    /// Multiple states can be combined using bitwise operations.
-    /// </summary>
-    [Flags]
-    public enum EquipmentState
+    public enum ItemType
     {
-        Pristine = 0,
-        Rusted = 1 << 0,
-        Dulled = 1 << 1,
-        Damaged = 1 << 2,
-        Broken = 1 << 3,
-        Frozen = 1 << 4,
-        Burning = 1 << 5
+        Helmet,
+        Circlet,
+        OneHanded,
+        TwoHanded,
+        Chest,
+        Barding,
+        Boots,
+        Trinket
     }
 
-
-    public class ItemComponent : IComponentData
+    public struct MagicItem : IEquatable<MagicItem>, IComponentData
     {
-        public Equipment EquipId { get; set; }
+        public ushort Id;
+
+        public MagicItem(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(MagicItem other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is MagicItem other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(MagicItem left, MagicItem right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(MagicItem left, MagicItem right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    public struct MagicItemPrototype
+    {
+        public string Name;
+        public ItemType Slot { get; set; }
+        public Armor ItemArmor { get; set; }
+        public Weapon ItemWeapon { get; set; }
         //public EffectId EffectId { get; set; } // Optional effect ID for items that apply effects
     }
 
@@ -32,71 +58,129 @@ namespace AutoBattlerLib
     /// Defines the types of equipment that can be equipped by units.
     /// Each equipment can only be of one type.
     /// </summary>
-    public enum EquipmentType
+    public enum ArmorType
     {
-        TwoHandedWeapon,
-        OneHandedWeapon,
+        Head,
         Shield,
-        RangedWeapon,
-        Helmet,
-        Circlet,
-        FullArmor,
-        ChestArmor,
+        FullBody, //Excludes Head, Wing, Tail
+        Chest,
         Barding,
-        Boots,
-        Trinket
+        Wing,
+        Tail,
+        Leg
     }
-    public struct Equipment : IEquatable<Equipment>, IComponentData
+
+    public struct Armor : IEquatable<Armor>, IComponentData
     {
         public ushort Id;
 
-        public Equipment(ushort id)
+        public Armor(ushort id)
         {
             Id = id;
         }
-        public bool Equals(Equipment other)
+        public bool Equals(Armor other)
         {
             return Id == other.Id;
         }
         public override bool Equals(object obj)
         {
-            return obj is Equipment other && Equals(other);
+            return obj is Armor other && Equals(other);
         }
         public override int GetHashCode()
         {
             return Id.GetHashCode();
         }
-        public static bool operator ==(Equipment left, Equipment right)
+        public static bool operator ==(Armor left, Armor right)
         {
             return left.Equals(right);
         }
-        public static bool operator !=(Equipment left, Equipment right)
+        public static bool operator !=(Armor left, Armor right)
+        {
+            return !left.Equals(right);
+        }
+    }
+    public struct NaturalArmor : IEquatable<NaturalArmor>, IComponentData
+    {
+        public ushort Id;
+
+        public NaturalArmor(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(NaturalArmor other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is NaturalArmor other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(NaturalArmor left, NaturalArmor right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(NaturalArmor left, NaturalArmor right)
         {
             return !left.Equals(right);
         }
     }
 
     // Equipment prototype used for creating new equipment entities
-    public struct EquipmentPrototype
+    public struct ArmorPrototype
     {
         public string Name { get; set; }
-        public EquipmentType Type { get; set; }
-        public sbyte NumAttacks { get; set; }
-        public sbyte DamageModifier { get; set; }
+        public ArmorType Type { get; set; }
         public sbyte AttackModifier { get; set; }
         public sbyte DefenseModifier { get; set; }
+        public sbyte ToughnessModifier { get; set; }
+        public sbyte ArmorResilience { get; set; }
     }
 
     /// <summary>
     /// Defines the types of equipment that can be equipped by units.
     /// Each equipment can only be of one type.
     /// </summary>
-    public enum NaturalWeaponType
+    public enum WeaponType
     {
-        HeadWeapon,
-        ArmWeapon,
-        LegWeapon,
-        TailWeapon
+        Head,
+        Arm,
+        TwoArm,
+        Leg,
+        Tail,
+        Misc
+    }
+    public struct Weapon : IEquatable<Weapon>, IComponentData
+    {
+        public ushort Id;
+
+        public Weapon(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(Weapon other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is Weapon other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(Weapon left, Weapon right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(Weapon left, Weapon right)
+        {
+            return !left.Equals(right);
+        }
     }
     public struct NaturalWeapon : IEquatable<NaturalWeapon>, IComponentData
     {
@@ -129,13 +213,16 @@ namespace AutoBattlerLib
     }
 
     // Equipment prototype used for creating new equipment entities
-    public struct NaturalWeaponPrototype
+    public struct WeaponPrototype
     {
         public string Name { get; set; }
-        public NaturalWeaponType Type { get; set; }
+        public WeaponType Type { get; set; }
+        public sbyte WeaponRange { get; set; }
         public sbyte NumAttacks { get; set; }
         public sbyte DamageModifier { get; set; }
         public sbyte AttackModifier { get; set; }
         public sbyte DefenseModifier { get; set; }
+        public sbyte WeaponResilience { get; set; }
+        public sbyte WeaponLength { get; set; }
     }
 }

@@ -124,7 +124,7 @@ namespace AutoBattlerLib
 
         public void AddEquipmentFromLoadout(Entity entity, LoadoutPrototypeId loadout)
         {
-            foreach (Equipment e in Prototypes.loadoutPrototypes[loadout])
+            foreach (Armor e in Prototypes.loadoutPrototypes[loadout])
             {
                 _ComponentManager.AddNewComponentToEntity(entity, e, ComponentType.Equipment);
             }
