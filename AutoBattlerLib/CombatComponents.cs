@@ -8,10 +8,10 @@ using System.Drawing;
 
 namespace AutoBattlerLib
 {
-    public class BattlefieldComponent : IComponentData
+    public class BattlefieldManager
     {
         public Tick CurrentTick { get; set; } = new Tick(0);
-        public SortedDictionary<Tick, HashSet<Entity>> Schedule { get; set; } = new SortedDictionary<Tick, HashSet<Entity>>();
+        public SortedDictionary<Tick, HashQueue<Entity>> Schedule { get; set; } = new SortedDictionary<Tick, HashQueue<Entity>>();
         public Tick[] EntitySchedule { get; set; }
         public UnitCard[] UnitCards { get; set; }
 
@@ -87,8 +87,8 @@ namespace AutoBattlerLib
         Natural = 1 << 0,
         Damaged = 1 << 1,
         Broken = 1 << 2,
-        LimbDamaged = 1 << 3,
-        LimbBroken = 1 << 4
+        SlotDamaged = 1 << 3,
+        SlotBroken = 1 << 4
     }
 
     public struct ArmorCard
@@ -109,8 +109,8 @@ namespace AutoBattlerLib
         Natural = 1 << 0,
         Damaged = 1 << 1,
         Broken = 1 << 2,
-        LimbDamaged = 1 << 3,
-        LimbBroken = 1 << 4
+        SlotDamaged = 1 << 3,
+        SlotBroken = 1 << 4
     }
 
     public struct WeaponCard
@@ -119,9 +119,12 @@ namespace AutoBattlerLib
         public WeaponType Type { get; set; }
         public sbyte Range { get; set; }
         public sbyte NumAttacks { get; set; }
+        public sbyte DelayModifier { get; set; } // Delay modifier for the weapon, affects how quickly it can be used
         public sbyte DamageModifier { get; set; }
         public sbyte AttackModifier { get; set; }
         public sbyte DefenseModifier { get; set; }
+        public sbyte WeaponResilience { get; set; }
+        public sbyte WeaponLength { get; set; }
         public WeaponFlags Flags { get; set; }
     }
 

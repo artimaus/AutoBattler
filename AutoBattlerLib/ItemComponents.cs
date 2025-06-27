@@ -137,6 +137,8 @@ namespace AutoBattlerLib
         public sbyte AttackModifier { get; set; }
         public sbyte DefenseModifier { get; set; }
         public sbyte ToughnessModifier { get; set; }
+        public sbyte ExhaustionModifier { get; set; } // Exhaustion modifier for the armor, affects how quickly it can be used
+        public sbyte SpeedModifier { get; set; } // Speed modifier for the armor, affects movement speed
         public sbyte ArmorResilience { get; set; }
     }
 
@@ -217,8 +219,9 @@ namespace AutoBattlerLib
     {
         public string Name { get; set; }
         public WeaponType Type { get; set; }
-        public sbyte WeaponRange { get; set; }
+        public sbyte Range { get; set; }
         public sbyte NumAttacks { get; set; }
+        public sbyte DelayModifier { get; set; } // Delay modifier for the weapon, affects how quickly it can be used
         public sbyte DamageModifier { get; set; }
         public sbyte AttackModifier { get; set; }
         public sbyte DefenseModifier { get; set; }
