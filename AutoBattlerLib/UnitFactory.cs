@@ -25,11 +25,11 @@ namespace AutoBattlerLib
         /// <returns>The created entity</returns>
         public Entity CreateUnit(UnitComponent unitComp)
         {
-            if (!(Prototypes.unitPrototypes.firstForm.Length < unitComp.Id))
+            if (!(Prototypes.unitPrototypes.FirstForm.Length < unitComp.Id))
             {
                 return default;
             }
-            var formId = Prototypes.unitPrototypes.firstForm[unitComp.Id];
+            var formId = Prototypes.unitPrototypes.FirstForm[unitComp.Id];
             var entity = _EntityManager.CreateEntity();
             _ComponentManager.AddNewComponentToEntity(entity, unitComp, ComponentType.Unit);
             _ComponentManager.AddNewComponentToEntity(entity, formId, ComponentType.Form);
@@ -124,9 +124,13 @@ namespace AutoBattlerLib
 
         public void AddEquipmentFromLoadout(Entity entity, LoadoutPrototypeId loadout)
         {
-            foreach (Armor e in Prototypes.loadoutPrototypes[loadout])
+            foreach (Armor e in Prototypes.loadoutArmor[loadout])
             {
-                _ComponentManager.AddNewComponentToEntity(entity, e, ComponentType.Equipment);
+                _ComponentManager.AddNewComponentToEntity(entity, e, ComponentType.Armor);
+            }
+            foreach (Weapon e in Prototypes.loadoutWeapons[loadout])
+            {
+                _ComponentManager.AddNewComponentToEntity(entity, e, ComponentType.Weapon);
             }
         }
     }

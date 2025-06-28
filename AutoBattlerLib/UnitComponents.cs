@@ -33,13 +33,43 @@ namespace AutoBattlerLib
         public readonly ushort BaseAthleticXP;
     }
 
-    public readonly struct ProficienciesPrototype
+    public struct ProficiencyPrototypeId : IEquatable<ProficiencyPrototypeId>
     {
-        public readonly byte BaseStrikingSkill;
-        public readonly byte BaseParryingSkill;
-        public readonly byte BaseEvasionSkill;
-        public readonly byte BaseBlockingSkill;
-        public readonly byte BaseAthleticSkill;
+        public ushort Id;
+
+        public ProficiencyPrototypeId(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(ProficiencyPrototypeId other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is ProficiencyPrototypeId other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(ProficiencyPrototypeId left, ProficiencyPrototypeId right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(ProficiencyPrototypeId left, ProficiencyPrototypeId right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    public readonly struct ProficiencyPrototypes
+    {
+        public readonly byte[] BaseStrikingSkill;
+        public readonly byte[] BaseParryingSkill;
+        public readonly byte[] BaseEvasionSkill;
+        public readonly byte[] BaseBlockingSkill;
+        public readonly byte[] BaseAthleticSkill;
     }
 
     public struct CommanderComponent : IEquatable<CommanderComponent>, IComponentData
@@ -72,10 +102,10 @@ namespace AutoBattlerLib
         }
     }
 
-    public struct CommanderAttributes
+    public struct CommanderAttributeProtoypes
     {
-        public readonly byte Command;
-        public readonly byte MoraleModifier;
+        public readonly byte[] Command;
+        public readonly byte[] MoraleModifier;
     }
 
     public struct UnitComponent : IEquatable<UnitComponent>, IComponentData
@@ -112,8 +142,7 @@ namespace AutoBattlerLib
     public struct UnitPrototypes
     {
         public string[] Name; // May not be needed
-        public FormComponent[] firstForm; // Always needed
-        public LoadoutPrototypeId[] Loadout; // Loadout prototype ID for the unit, May not be needed
+        public FormComponent[] FirstForm; // Always needed
     }
 
     public struct FormComponent : IEquatable<FormComponent>, IComponentData
@@ -148,9 +177,9 @@ namespace AutoBattlerLib
 
     public struct FormPrototypes
     {
-        public readonly string[] Name;
-        public readonly BodyPrototypeId[] Body;
-        public readonly AttributesId[] Attributes;
+        public string[] Name;
+        public BodyPrototypeId[] Body;
+        public AttributesId[] Attributes;
     }
 
     public enum TransitionType
@@ -204,17 +233,17 @@ namespace AutoBattlerLib
         }
     }
 
-    public readonly struct AttributesPrototype
+    public struct AttributePrototypes
     {
-        public readonly byte BaseSize;
-        public readonly byte BaseStrength;
-        public readonly byte BaseDexterity;
-        public readonly byte BaseAgility;
-        public readonly byte BaseCelerity; // Reflexive or striking speed
-        public readonly byte BaseVigor;
-        public readonly byte BaseToughness;
-        public readonly byte BaseWill;
-        public readonly byte BaseConstitution;
+        public byte[] BaseSize;
+        public byte[] BaseStrength;
+        public byte[] BaseDexterity;
+        public byte[] BaseAgility;
+        public byte[] BaseCelerity; // Reflexive or striking speed
+        public byte[] BaseVigor;
+        public byte[] BaseToughness;
+        public byte[] BaseWill;
+        public byte[] BaseConstitution;
     }
 
     public struct BodyPrototypeId : IEquatable<BodyPrototypeId>
@@ -260,19 +289,19 @@ namespace AutoBattlerLib
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct BodyPrototype
+    public struct BodyPrototypes
     {
-        public byte Heads;
-        public byte EyesPerHead;
-        public byte HeadSlots; // HeadSlots + CircletOnlySLots should never be more than Heads
-        public byte CircletOnlySlots; //Circlets don't overwrite any natural weapons
-        public byte Arms;
-        public byte ArmSlots; // ArmSlots should never be more than Arms
-        public byte Legs;
-        public byte Wings;
-        public byte Tails;
-        public byte TrinketSlots;
-        public BodyFlags Flags;
+        public byte[] Heads;
+        public byte[] EyesPerHead;
+        public byte[] HeadSlots; // HeadSlots + CircletOnlySLots should never be more than Heads
+        public byte[] CircletOnlySlots; //Circlets don't overwrite any natural weapons
+        public byte[] Arms;
+        public byte[] ArmSlots; // ArmSlots should never be more than Arms
+        public byte[] Legs;
+        public byte[] Wings;
+        public byte[] Tails;
+        public byte[] TrinketSlots;
+        public BodyFlags[] Flags;
     }
 
     public enum BodyPartType

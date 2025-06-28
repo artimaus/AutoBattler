@@ -17,9 +17,10 @@ namespace AutoBattlerLib
         Experience,
         BodyPart,
         BodySlot,
-        Equipment,
+        Armor,
+        Weapon,
         NaturalWeapon,
-        Item,
+        MagicItem,
         Battlefield,
         ScheduledAction
     }

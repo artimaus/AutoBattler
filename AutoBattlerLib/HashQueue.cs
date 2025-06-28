@@ -42,7 +42,7 @@ namespace AutoBattlerLib
         /// <summary>
         /// Gets the number of elements in the queue
         /// </summary>
-        public int Count => _queue.Count;
+        public int Count => _hashSet.Count;
 
         /// <summary>
         /// Determines whether the queue is empty

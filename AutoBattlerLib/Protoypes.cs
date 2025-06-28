@@ -10,16 +10,22 @@ namespace AutoBattlerLib
     {
         internal static UnitPrototypes unitPrototypes = new UnitPrototypes();
         internal static FormPrototypes formPrototypes = new FormPrototypes();
-        internal static AttributesPrototype[] attributes = new AttributesPrototype[20000];
-        internal static BodyPrototype[] bodyPrototypes = new BodyPrototype[20000];
-        internal static ArmorPrototype[] equipmentPrototypes = new ArmorPrototype[30000];
-        internal static NaturalWeaponPrototype[] naturalWeaponPrototypes = new NaturalWeaponPrototype[30000];
-        internal static CommanderAttributes[] commanderAttributes = new CommanderAttributes[20000];
+        internal static ProficiencyPrototypes proficiencyPrototypes = new ProficiencyPrototypes();
+        internal static BodyPrototypes bodyPrototypes = new BodyPrototypes();
+        internal static AttributePrototypes attributes = new AttributePrototypes();
+        internal static WeaponPrototypes weaponPrototypes = new WeaponPrototypes();
+        internal static ArmorPrototypes armorPrototypes = new ArmorPrototypes();
+        internal static WeaponPrototypes naturalWeaponPrototypes = new WeaponPrototypes();
+        internal static ArmorPrototypes naturalArmorPrototypes = new ArmorPrototypes();
+        internal static CommanderAttributeProtoypes commanderAttributes = new CommanderAttributeProtoypes();
+
         internal static Dictionary<UnitComponent, CommanderComponent> unitCommand = new Dictionary<UnitComponent, CommanderComponent>();
-        internal static Dictionary<UnitComponent, ProficienciesPrototype> defaultProficiencies = new Dictionary<UnitComponent, ProficienciesPrototype>();
         internal static Dictionary<UnitComponent, DrillingPrototype> defaultDrilling = new Dictionary<UnitComponent, DrillingPrototype>();
-        internal static Dictionary<FormComponent, HashSet<NaturalWeapon>> formWeapons = new Dictionary<FormComponent, HashSet<NaturalWeapon>>();
-        internal static Dictionary<LoadoutPrototypeId, HashSet<Armor>> loadoutPrototypes = new Dictionary<LoadoutPrototypeId, HashSet<Armor>>();
+        internal static Dictionary<UnitComponent, ProficiencyPrototypeId> defaultProficiencies = new Dictionary<UnitComponent, ProficiencyPrototypeId>();
+        internal static Dictionary<UnitComponent, LoadoutPrototypeId> loadouts = new Dictionary<UnitComponent, LoadoutPrototypeId>();
+        internal static Dictionary<LoadoutPrototypeId, List<Armor>> loadoutArmor = new Dictionary<LoadoutPrototypeId, List<Armor>>();
+        internal static Dictionary<LoadoutPrototypeId, List<Weapon>> loadoutWeapons = new Dictionary<LoadoutPrototypeId, List<Weapon>>();
+        internal static Dictionary<FormComponent, List<NaturalWeapon>> formNaturalWeapons = new Dictionary<FormComponent, List<NaturalWeapon>>();
         internal static Dictionary<TransitionType, Dictionary<FormComponent, FormComponent>> formTransitions = new Dictionary<TransitionType, Dictionary<FormComponent, FormComponent>>();
     }
 }

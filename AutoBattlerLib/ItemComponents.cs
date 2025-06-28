@@ -62,7 +62,6 @@ namespace AutoBattlerLib
     {
         Head,
         Shield,
-        FullBody, //Excludes Head, Wing, Tail
         Chest,
         Barding,
         Wing,
@@ -130,16 +129,16 @@ namespace AutoBattlerLib
     }
 
     // Equipment prototype used for creating new equipment entities
-    public struct ArmorPrototype
+    public struct ArmorPrototypes
     {
-        public string Name { get; set; }
-        public ArmorType Type { get; set; }
-        public sbyte AttackModifier { get; set; }
-        public sbyte DefenseModifier { get; set; }
-        public sbyte ToughnessModifier { get; set; }
-        public sbyte ExhaustionModifier { get; set; } // Exhaustion modifier for the armor, affects how quickly it can be used
-        public sbyte SpeedModifier { get; set; } // Speed modifier for the armor, affects movement speed
-        public sbyte ArmorResilience { get; set; }
+        public string[] Name { get; set; }
+        public ArmorType[] Type { get; set; }
+        public sbyte[] AttackModifier { get; set; }
+        public sbyte[] DefenseModifier { get; set; }
+        public sbyte[] ToughnessModifier { get; set; }
+        public sbyte[] ExhaustionModifier { get; set; } // Exhaustion modifier for the armor, affects how quickly it can be used
+        public sbyte[] SpeedModifier { get; set; } // Speed modifier for the armor, affects movement speed
+        public sbyte[] ArmorResilience { get; set; }
     }
 
     /// <summary>
@@ -215,17 +214,17 @@ namespace AutoBattlerLib
     }
 
     // Equipment prototype used for creating new equipment entities
-    public struct WeaponPrototype
+    public struct WeaponPrototypes
     {
-        public string Name { get; set; }
-        public WeaponType Type { get; set; }
-        public sbyte Range { get; set; }
-        public sbyte NumAttacks { get; set; }
-        public sbyte DelayModifier { get; set; } // Delay modifier for the weapon, affects how quickly it can be used
-        public sbyte DamageModifier { get; set; }
-        public sbyte AttackModifier { get; set; }
-        public sbyte DefenseModifier { get; set; }
-        public sbyte WeaponResilience { get; set; }
-        public sbyte WeaponLength { get; set; }
+        public string[] Name { get; set; }
+        public WeaponType[] Type { get; set; }
+        public sbyte[] Range { get; set; }
+        public sbyte[] NumAttacks { get; set; }
+        public sbyte[] DelayModifier { get; set; } // Delay modifier for the weapon, affects how quickly it can be used
+        public sbyte[] DamageModifier { get; set; }
+        public sbyte[] AttackModifier { get; set; }
+        public sbyte[] DefenseModifier { get; set; }
+        public sbyte[] WeaponResilience { get; set; }
+        public sbyte[] WeaponLength { get; set; }
     }
 }
