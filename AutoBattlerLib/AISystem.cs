@@ -18,7 +18,7 @@ namespace AutoBattlerLib
         private GridSystem gridSystem;
         private Random random = new Random();
 
-        public AISystem(EntityManager entityManager, ComponentManager componentManager,
+        public AISystem(EntityManager entityManager, EntityComponentManager componentManager,
                         EventSystem eventSystem, TurnSystem turnSystem,
                         MovementSystem movementSystem, CombatSystem combatSystem,
                         GridSystem gridSystem)

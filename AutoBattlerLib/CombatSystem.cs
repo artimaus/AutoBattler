@@ -9,13 +9,13 @@ namespace AutoBattlerLib
 {
     public class CombatSystem
     {
-        private readonly ComponentManager _componentManager;
-        private readonly EntityManager _entityManager;
+        private readonly EntityComponentManager _EntityComponentManager;
 
-        public CombatSystem(ComponentManager componentManager, EntityManager entityManager)
+
+
+        public CombatSystem(EntityComponentManager entityComponentManager)
         {
-            _componentManager = componentManager;
-            _entityManager = entityManager;
+            _EntityComponentManager = entityComponentManager;
         }
 
         // Schedule an entity for action on a battlefield

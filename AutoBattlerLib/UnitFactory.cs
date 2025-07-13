@@ -9,13 +9,11 @@ namespace AutoBattlerLib
     /// </summary>
     public class UnitFactory
     {
-        private readonly EntityManager _EntityManager;
-        private readonly ComponentManager _ComponentManager;
+        private readonly EntityComponentManager _EntityComponentManager;
 
-        public UnitFactory(EntityManager entityManager, ComponentManager componentManager)
+        public UnitFactory(EntityComponentManager entityComponentManager)
         {
-            _EntityManager = entityManager;
-            _ComponentManager = componentManager;
+            _EntityComponentManager = entityComponentManager;
         }
 
         /// <summary>
@@ -30,14 +28,10 @@ namespace AutoBattlerLib
                 return default;
             }
             var formId = Prototypes.unitPrototypes.FirstForm[unitComp.Id];
-            var entity = _EntityManager.CreateEntity();
-            _ComponentManager.AddNewComponentToEntity(entity, unitComp, ComponentType.Unit);
-            _ComponentManager.AddNewComponentToEntity(entity, formId, ComponentType.Form);
+            var entity = _EntityComponentManager.CreateEntity();
+            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Unit, unitComp);
+            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Form, formId);
             AddExperienceComponent(entity, unitComp);
-            if (!(Prototypes.unitPrototypes.Loadout[unitComp.Id].Id == 0))
-            {
-                AddEquipmentFromLoadout(entity, Prototypes.unitPrototypes.Loadout[unitComp.Id]);
-            }
             return entity;
         }
 
@@ -48,7 +42,7 @@ namespace AutoBattlerLib
                 return default;
             }
             var entity = CreateUnit(prototypeId);
-            _ComponentManager.AddNewComponentToEntity(entity, commandId, ComponentType.Commander);
+            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Commander, commandId);
             return entity;
         }
 
@@ -96,42 +90,16 @@ namespace AutoBattlerLib
         /// </summary>
         private void AddExperienceComponent(Entity entity, UnitComponent unitId)
         {
-            ExperienceComponent experience;
-            if (Prototypes.defaultDrilling.TryGetValue(unitId, out var drillId))
+            Prototypes.defaultTraining.TryGetValue(unitId, out var trainingId);
+            ExperienceComponent experience = new ExperienceComponent
             {
-                experience = new ExperienceComponent
-                {
-                    StrikingXP = drillId.BaseStrikingXP,
-                    ParryingXP = drillId.BaseParryingXP,
-                    EvasionXP = drillId.BaseEvasionXP,
-                    BlockingXP = drillId.BaseBlockingXP,
-                    AthleticXP = drillId.BaseAthleticXP
-                };
-            }
-            else
-            {
-                experience = new ExperienceComponent
-                {
-                    StrikingXP = 0,
-                    ParryingXP = 0,
-                    EvasionXP = 0,
-                    BlockingXP = 0,
-                    AthleticXP = 0
-                };
-            }
-            _ComponentManager.AddNewComponentToEntity(entity, experience, ComponentType.Experience);
-        }
-
-        public void AddEquipmentFromLoadout(Entity entity, LoadoutPrototypeId loadout)
-        {
-            foreach (Armor e in Prototypes.loadoutArmor[loadout])
-            {
-                _ComponentManager.AddNewComponentToEntity(entity, e, ComponentType.Armor);
-            }
-            foreach (Weapon e in Prototypes.loadoutWeapons[loadout])
-            {
-                _ComponentManager.AddNewComponentToEntity(entity, e, ComponentType.Weapon);
-            }
+                StrikingXP = Prototypes.trainingPrototypes.BaseStrikingXP[trainingId.Id],
+                ParryingXP = Prototypes.trainingPrototypes.BaseParryingXP[trainingId.Id],
+                EvasionXP = Prototypes.trainingPrototypes.BaseEvasionXP[trainingId.Id],
+                BlockingXP = Prototypes.trainingPrototypes.BaseBlockingXP[trainingId.Id],
+                AthleticXP = Prototypes.trainingPrototypes.BaseAthleticXP[trainingId.Id]
+            };
+            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Experience, experience);
         }
     }
 }

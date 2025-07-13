@@ -62,7 +62,7 @@ namespace AutoBattlerLib
         private Entity[,] terrainGrid;
         private Entity[,] unitGrid;
 
-        public GridSystem(EntityManager entityManager, ComponentManager componentManager,
+        public GridSystem(EntityManager entityManager, EntityComponentManager componentManager,
                           EventSystem eventSystem, int width, int height)
             : base(entityManager, componentManager, eventSystem)
         {

@@ -12,10 +12,10 @@ namespace AutoBattlerLib
     public abstract class System
     {
         protected EntityManager EntityManager { get; }
-        protected ComponentManager ComponentManager { get; }
+        protected EntityComponentManager ComponentManager { get; }
         protected EventSystem EventSystem { get; }
 
-        protected System(EntityManager entityManager, ComponentManager componentManager, EventSystem eventSystem)
+        protected System(EntityManager entityManager, EntityComponentManager componentManager, EventSystem eventSystem)
         {
             EntityManager = entityManager;
             ComponentManager = componentManager;

@@ -15,7 +15,7 @@ namespace AutoBattlerLib
         Trinket
     }
 
-    public struct MagicItem : IEquatable<MagicItem>, IComponentData
+    public struct MagicItem : IEquatable<MagicItem>
     {
         public ushort Id;
 
@@ -69,7 +69,7 @@ namespace AutoBattlerLib
         Leg
     }
 
-    public struct Armor : IEquatable<Armor>, IComponentData
+    public struct Armor : IEquatable<Armor>
     {
         public ushort Id;
 
@@ -98,7 +98,7 @@ namespace AutoBattlerLib
             return !left.Equals(right);
         }
     }
-    public struct NaturalArmor : IEquatable<NaturalArmor>, IComponentData
+    public struct NaturalArmor : IEquatable<NaturalArmor>
     {
         public ushort Id;
 
@@ -154,7 +154,8 @@ namespace AutoBattlerLib
         Tail,
         Misc
     }
-    public struct Weapon : IEquatable<Weapon>, IComponentData
+
+    public struct Weapon : IEquatable<Weapon>
     {
         public ushort Id;
 
@@ -183,7 +184,7 @@ namespace AutoBattlerLib
             return !left.Equals(right);
         }
     }
-    public struct NaturalWeapon : IEquatable<NaturalWeapon>, IComponentData
+    public struct NaturalWeapon : IEquatable<NaturalWeapon>
     {
         public ushort Id;
 

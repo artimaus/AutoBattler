@@ -32,7 +32,7 @@ namespace AutoBattlerLib
 
         public int CurrentFactionId => factionIds.Count > 0 ? factionIds[currentFactionIndex] : -1;
 
-        public TurnSystem(EntityManager entityManager, ComponentManager componentManager, EventSystem eventSystem)
+        public TurnSystem(EntityManager entityManager, EntityComponentManager componentManager, EventSystem eventSystem)
             : base(entityManager, componentManager, eventSystem)
         {
         }

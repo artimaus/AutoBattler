@@ -13,7 +13,7 @@ namespace AutoBattlerLib
     public class GameManager
     {
         private EntityManager entityManager;
-        private ComponentManager componentManager;
+        private EntityComponentManager componentManager;
         private SystemManager systemManager;
         private EventSystem eventSystem;
         private GridSystem gridSystem;
@@ -29,7 +29,7 @@ namespace AutoBattlerLib
         {
             // Initialize core systems
             entityManager = new EntityManager();
-            componentManager = new ComponentManager();
+            componentManager = new EntityComponentManager();
             systemManager = new SystemManager();
             eventSystem = new EventSystem();
 

@@ -11,8 +11,8 @@ namespace AutoBattlerLib
     public class BattlefieldManager
     {
         public Tick CurrentTick { get; set; } = new Tick(0);
-        public SortedDictionary<Tick, HashQueue<Entity>> Schedule { get; set; } = new SortedDictionary<Tick, HashQueue<Entity>>();
-        public Tick[] EntitySchedule { get; set; }
+        public BattleScheduler TickSchedule { get; set; } // [10][6682]
+        public Entity[] entities { get; set; } // [26512]
         public UnitCard[] UnitCards { get; set; }
 
     }
@@ -22,6 +22,31 @@ namespace AutoBattlerLib
         
     }
 
+    public struct Round : IEquatable<Round>, IComparable<Round>
+    {
+        public int Value { get; }
+
+        public Round(int value)
+        {
+            Value = value;
+        }
+
+        // Comparison operators for scheduling
+        public int CompareTo(Round other) => Value.CompareTo(other.Value);
+        public bool Equals(Round other) => Value == other.Value;
+
+        // Arithmetic for recovery time calculations
+        public static Round operator +(Round round, int recovery) => new Round(round.Value + recovery);
+        public static int operator -(Round a, Round b) => a.Value - b.Value;
+
+        // Standard overrides
+        public override bool Equals(object obj) => obj is Round other && Equals(other);
+        public override int GetHashCode() => Value.GetHashCode();
+        public static bool operator ==(Round left, Round right) => left.Equals(right);
+        public static bool operator !=(Round left, Round right) => !left.Equals(right);
+        public static bool operator <(Round left, Round right) => left.CompareTo(right) < 0;
+        public static bool operator >(Round left, Round right) => left.CompareTo(right) > 0;
+    }
     public struct Tick : IEquatable<Tick>, IComparable<Tick>
     {
         public int Value { get; }
@@ -48,98 +73,115 @@ namespace AutoBattlerLib
         public static bool operator >(Tick left, Tick right) => left.CompareTo(right) > 0;
     }
 
-    public struct UnitCard
+    public struct EntityLookup
     {
-        public Entity Unit { get; set; }
-
-        public int BodyPartCardStartIndex { get; set; } // Index in the tracker array where this unit's body parts start
-        public int BodyPartCardCount { get; set; } // Number of body parts this unit has in the tracker
-
-        public int WeaponCardStartIndex { get; set; } // Index in the tracker array where this unit's weapons start
-        public int WeaponCardCount { get; set; } // Number of weapons this unit has in the tracker
-
-        public readonly byte Size;
-        public readonly byte Strength;
-        public readonly byte Dexterity;
-        public readonly byte Agility;
-        public readonly byte Celerity; // Reflexive or striking speed
-        public readonly byte Vigor;
-        public readonly byte Toughness;
-        public readonly byte Will;
-        public readonly byte Constitution;
-
-        public readonly byte StrikingSkill;
-        public readonly byte ParryingSkill;
-        public readonly byte EvasionSkill;
-        public readonly byte BlockingSkill;
-        public readonly byte AthleticSkill;
-
-        public int MaxHealth { get; set; }
-        public int CurrentHealth { get; set; }
-        public int CurrentExhaustion { get; set; }
-        public int CurrentMorale { get; set; }
+        public sbyte round;
+        public byte tick;
+        public ushort index;
     }
 
-    [Flags]
-    public enum ArmorFlags
+    public struct BattleScheduler
     {
-        None = 0,
-        Natural = 1 << 0,
-        Damaged = 1 << 1,
-        Broken = 1 << 2,
-        SlotDamaged = 1 << 3,
-        SlotBroken = 1 << 4
-    }
+        private ushort[][] tickEntities;// [10][6628]
+        private ushort[] tickNextIndex; // [10]
+        private ushort[][] roundEntities; // [4][26512,13256,6628,3314]
+        private byte[][] roundEntityTicks; // [4][13256,6628,3314,1657]
+        private ushort[] roundNextIndex; // [4]
 
-    public struct ArmorCard
-    {
-        public string Name { get; set; }
-        public ArmorType Type { get; set; }
-        public sbyte AttackModifier { get; set; }
-        public sbyte DefenseModifier { get; set; }
-        public sbyte ToughnessModifier { get; set; }
-        public sbyte ArmorResilience { get; set; }
-        public ArmorFlags Flags { get; set; }
-    }
+        private EntityLookup[] entityLookup; // [26512]
 
-    [Flags]
-    public enum WeaponFlags
-    {
-        None = 0,
-        Natural = 1 << 0,
-        Damaged = 1 << 1,
-        Broken = 1 << 2,
-        SlotDamaged = 1 << 3,
-        SlotBroken = 1 << 4
-    }
+        public BattleScheduler(ushort entityNum)
+        {
+            if(entityNum < 400)
+            {
+                entityNum = 400;
+            }
+            else if (entityNum > 6628)
+            {
+                entityNum = 6628;
+            }
 
-    public struct WeaponCard
-    {
-        public string Name { get; set; }
-        public WeaponType Type { get; set; }
-        public sbyte Range { get; set; }
-        public sbyte NumAttacks { get; set; }
-        public sbyte DelayModifier { get; set; } // Delay modifier for the weapon, affects how quickly it can be used
-        public sbyte DamageModifier { get; set; }
-        public sbyte AttackModifier { get; set; }
-        public sbyte DefenseModifier { get; set; }
-        public sbyte WeaponResilience { get; set; }
-        public sbyte WeaponLength { get; set; }
-        public WeaponFlags Flags { get; set; }
-    }
+            tickEntities = new ushort[10][];
+            tickNextIndex = new ushort[10];
+            roundEntities = new ushort[4][];
+            roundEntityTicks = new byte[4][];
+            roundNextIndex = new ushort[4];
 
-    public struct BodyCard
-    {
-        public byte Heads;
-        public byte EyesPerHead;
-        public byte HeadSlots; // HeadSlots + CircletOnlySLots should never be more than Heads
-        public byte CircletOnlySlots; //Circlets don't overwrite any natural weapons
-        public byte Arms;
-        public byte ArmSlots; // ArmSlots should never be more than Arms
-        public byte Legs;
-        public byte Wings;
-        public byte Tails;
-        public byte TrinketSlots;
-        public BodyFlags Flags;
+            for (int i = 0; i < tickEntities.Length; i++)
+            {
+                tickEntities[i] = new ushort[entityNum];
+
+                if (i == 0)
+                {
+                    roundEntities[i] = new ushort[entityNum * 4];
+                    roundEntityTicks[i] = new byte[entityNum * 2];
+                }
+                else if (i == 1)
+                {
+                    roundEntities[i] = new ushort[entityNum * 2];
+                    roundEntityTicks[i] = new byte[entityNum];
+                }
+                else if (i == 2)
+                {
+                    roundEntities[i] = new ushort[entityNum];
+                    roundEntityTicks[i] = new byte[(entityNum + 1) / 2];
+                }
+                else
+                {
+                    roundEntities[i] = new ushort[(entityNum + 1) / 2];
+                    roundEntityTicks[i] = new byte[(entityNum + 3) / 4];
+                }
+            }
+        }
+
+        public void RescheduleEntity(byte tick, ushort index, byte tickAdvancement)
+        {
+            ushort entity = tickEntities[tick][index];
+            tickEntities[tick][index] = 0; // Clear the old index
+            ushort delta = (ushort)(tick + tickAdvancement);
+            sbyte roundDelta = (sbyte)((delta / 10) - 1);
+            byte tickDelta = (byte)(delta % 10);
+            while ((roundDelta >= 0 && roundNextIndex[roundDelta] >= roundEntities[roundDelta].Length)
+                    || tickNextIndex[tickDelta] >= tickEntities[tickDelta].Length)
+            {
+                tickDelta++;
+                if(tickDelta > 9)
+                {
+                    roundDelta++;
+                    tickDelta = 0;
+                }
+            }
+
+            if (roundDelta >= 0)
+            {
+                EntityLookup eLookup = new EntityLookup
+                {
+                    round = roundDelta,
+                    tick = tickDelta,
+                    index = roundNextIndex[roundDelta]++
+                };
+                roundEntities[eLookup.round][eLookup.index] = entity;
+                roundEntityTicks[eLookup.round][eLookup.index] = eLookup.tick;
+                entityLookup[entity] = eLookup; // Update the lookup
+            }
+            else
+            {
+                EntityLookup eLookup = new EntityLookup
+                {
+                    round = 0,
+                    tick = tickDelta,
+                    index = tickNextIndex[tickDelta]++
+                };
+                tickEntities[eLookup.tick][eLookup.index] = entity;
+                entityLookup[entity] = eLookup; // Update the lookup
+            }
+        }
+
+        public void RescheduleEntity(ushort entity, byte tickAdvancement)
+        {
+            RescheduleEntity(entityLookup[entity].tick);
+        }
+
+        public void 
     }
 }

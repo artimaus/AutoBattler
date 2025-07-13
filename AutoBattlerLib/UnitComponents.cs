@@ -15,7 +15,7 @@ namespace AutoBattlerLib
         Poison
     }
 
-    public class ExperienceComponent : IComponentData
+    public struct ExperienceComponent : IComponentData
     {
         public ushort StrikingXP { get; set; }
         public ushort ParryingXP { get; set; }
@@ -24,40 +24,70 @@ namespace AutoBattlerLib
         public ushort AthleticXP { get; set; }
     }
 
-    public readonly struct DrillingPrototype
-    {
-        public readonly ushort BaseStrikingXP;
-        public readonly ushort BaseParryingXP;
-        public readonly ushort BaseEvasionXP;
-        public readonly ushort BaseBlockingXP;
-        public readonly ushort BaseAthleticXP;
-    }
-
-    public struct ProficiencyPrototypeId : IEquatable<ProficiencyPrototypeId>
+    public struct TrainingId : IEquatable<TrainingId>
     {
         public ushort Id;
 
-        public ProficiencyPrototypeId(ushort id)
+        public TrainingId(ushort id)
         {
             Id = id;
         }
-        public bool Equals(ProficiencyPrototypeId other)
+        public bool Equals(TrainingId other)
         {
             return Id == other.Id;
         }
         public override bool Equals(object obj)
         {
-            return obj is ProficiencyPrototypeId other && Equals(other);
+            return obj is TrainingId other && Equals(other);
         }
         public override int GetHashCode()
         {
             return Id.GetHashCode();
         }
-        public static bool operator ==(ProficiencyPrototypeId left, ProficiencyPrototypeId right)
+        public static bool operator ==(TrainingId left, TrainingId right)
         {
             return left.Equals(right);
         }
-        public static bool operator !=(ProficiencyPrototypeId left, ProficiencyPrototypeId right)
+        public static bool operator !=(TrainingId left, TrainingId right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    public readonly struct TrainingPrototypes
+    {
+        public readonly ushort[] BaseStrikingXP;
+        public readonly ushort[] BaseParryingXP;
+        public readonly ushort[] BaseEvasionXP;
+        public readonly ushort[] BaseBlockingXP;
+        public readonly ushort[] BaseAthleticXP;
+    }
+
+    public struct ProficiencyId : IEquatable<ProficiencyId>
+    {
+        public ushort Id;
+
+        public ProficiencyId(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(ProficiencyId other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is ProficiencyId other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(ProficiencyId left, ProficiencyId right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(ProficiencyId left, ProficiencyId right)
         {
             return !left.Equals(right);
         }
@@ -108,7 +138,7 @@ namespace AutoBattlerLib
         public readonly byte[] MoraleModifier;
     }
 
-    public struct UnitComponent : IEquatable<UnitComponent>, IComponentData
+    public struct UnitComponent : IEquatable<UnitComponent>, IComparable<UnitComponent>, IComponentData
     {
         public ushort Id;
 
@@ -116,6 +146,12 @@ namespace AutoBattlerLib
         {
             Id = id;
         }
+
+        public int CompareTo(UnitComponent other)
+        {
+            return Id.CompareTo(other.Id);
+        }
+
         public bool Equals(UnitComponent other)
         {
             return Id == other.Id;
@@ -143,9 +179,10 @@ namespace AutoBattlerLib
     {
         public string[] Name; // May not be needed
         public FormComponent[] FirstForm; // Always needed
+        public LoadoutPrototypeId[] Loadout; // Optional, can be 0
     }
 
-    public struct FormComponent : IEquatable<FormComponent>, IComponentData
+    public struct FormComponent : IEquatable<FormComponent>, IComparable<FormComponent>, IComponentData
     {
         public ushort Id;
 
@@ -153,6 +190,12 @@ namespace AutoBattlerLib
         {
             Id = id;
         }
+
+        public int CompareTo(FormComponent other)
+        {
+            return Id.CompareTo(other.Id);
+        }
+
         public bool Equals(FormComponent other)
         {
             return Id == other.Id;
@@ -180,14 +223,53 @@ namespace AutoBattlerLib
         public string[] Name;
         public BodyPrototypeId[] Body;
         public AttributesId[] Attributes;
+        public FormLoadoutPrototypeId[] Loadout; // Optional, can be 0
+    }
+
+    public struct FormLoadoutPrototypeId : IEquatable<FormLoadoutPrototypeId>
+    {
+        public ushort Id;
+
+        public FormLoadoutPrototypeId(ushort id)
+        {
+            Id = id;
+        }
+        public bool Equals(FormLoadoutPrototypeId other)
+        {
+            return Id == other.Id;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is FormLoadoutPrototypeId other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public static bool operator ==(FormLoadoutPrototypeId left, FormLoadoutPrototypeId right)
+        {
+            return left.Equals(right);
+        }
+        public static bool operator !=(FormLoadoutPrototypeId left, FormLoadoutPrototypeId right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    public struct FormLoadoutPrototypes
+    {
+        public byte[] natWeaponNum;
+        public NaturalWeapon[] natWeaponStartIndex;
+        public byte[] natArmorNum;
+        public NaturalArmor[] natArmorStartIndex;
     }
 
     public enum TransitionType
     {
-        Arbitrary,
-        PermanentDeath,
-        TemporaryDeath,
-        TemporaryDeathRevert
+        OnDeath,
+        OnBattleStart,
+        OnBattleEnd,
+        OnCommand
     }
 
     public enum AttributeType
@@ -233,7 +315,7 @@ namespace AutoBattlerLib
         }
     }
 
-    public struct AttributePrototypes
+    public struct AttributesPrototypes
     {
         public byte[] BaseSize;
         public byte[] BaseStrength;
@@ -277,18 +359,17 @@ namespace AutoBattlerLib
     }
 
     [Flags]
-    public enum BodyFlags : byte
+    public enum BodyPrototypeEncodings
     {
         None = 0,
-        BootSlot = 1 << 0,      // 1
-        HasChest = 1 << 1,      // 2
-        ChestSlot = 1 << 2,     // 4
-        HasBeastTorso = 1 << 3, // 8
-        BardingSlot = 1 << 4    // 16
-                                // 3 bits remaining for future use
+        HasChest = 1 << 0, // Has a chest slot
+        ChestSlot = 1 << 1, // Chest slot is used
+        HasBeastTorso = 1 << 2, // Has a beast torso slot
+        BardingSlot = 1 << 3, // Barding slot is used
+        BootSlot = 1 << 4 // Boot slot is used
+        // 3 more bits can be used for future expansions
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BodyPrototypes
     {
         public byte[] Heads;
@@ -301,7 +382,7 @@ namespace AutoBattlerLib
         public byte[] Wings;
         public byte[] Tails;
         public byte[] TrinketSlots;
-        public BodyFlags[] Flags;
+        public BodyPrototypeEncodings[] Encodings; // Encodings for the body prototype
     }
 
     public enum BodyPartType
@@ -354,5 +435,13 @@ namespace AutoBattlerLib
         {
             return !left.Equals(right);
         }
+    }
+
+    public struct LoadoutPrototypes
+    {
+        public byte[] weaponNum;
+        public Weapon[] weaponStartIndex;
+        public byte[] armorNum;
+        public Armor[] armorStartIndex;
     }
 }
