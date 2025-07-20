@@ -88,7 +88,9 @@ namespace AutoBattlerLib
     /// </summary>
     public class EntityComponentManager
     {
-        private bool[] entities; // [maxEntities] true if the entity exists, false if it has been recycled
+        public EntityComponentManager() { }
+
+        private BitFlagArray entities; // [maxEntities] true if the entity exists, false if it has been recycled
         private int nextEntityId; // next entity id
 
         private Entity[] recycledEntities; // [maxEntities / 2] recycled entities
@@ -185,7 +187,7 @@ namespace AutoBattlerLib
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Idx(ComponentType type)
         {
-            return (int)type;
+            return (int)type << 1;
         }
 
         private ComponentId[][] recycledComponents; // [types][recycledId]
@@ -339,7 +341,7 @@ namespace AutoBattlerLib
                     {
                         validEntities.Add(current);
                     }
-                    else if(current == default && validEntities.Contains(current))
+                    else if (entityComponents[current.Id][Idx(type)] == default && validEntities.Contains(current))
                     {
                         validEntities.Remove(current);
                     }
@@ -362,6 +364,71 @@ namespace AutoBattlerLib
             foreach(ComponentType type in Enum.GetValues(typeof(ComponentType)))
             {
                 RemoveComponentFromEntity(entity, type);
+            }
+        }
+
+        public EntityComponentManager ForkSubManager(Entity[] newEntities)
+        {
+            EntityComponentManager subManager = new EntityComponentManager();
+            foreach (Entity e in newEntities)
+            {
+                Entity newE = subManager.CreateEntity();
+                for (int i = 0; i < entityComponents.Length; i++)
+                {
+                    ComponentType type = (ComponentType)(1 << i);
+                    switch (type)
+                    {
+                        case ComponentType.Unit:
+                            subManager.AttachComponentToEntity(newE, type, unitComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                        case ComponentType.Commander:
+                            subManager.AttachComponentToEntity(newE, type, commanderComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                        case ComponentType.Form:
+                            subManager.AttachComponentToEntity(newE, type, formComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                        case ComponentType.Experience:
+                            subManager.AttachComponentToEntity(newE, type, experienceComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                    }
+                }
+            }
+            foreach (Entity e in newEntities)
+            {
+                DestroyEntity(e);
+            }
+            return subManager;
+        }
+
+        public void MergeSubManager(EntityComponentManager subManager)
+        {
+            Entity[] subEntities = subManager.GetAllEntities().ToArray();
+            foreach (Entity e in subEntities)
+            {
+                Entity mergedE = CreateEntity();
+                for (int i = 0; i < entityComponents.Length; i++)
+                {
+                    ComponentType type = (ComponentType)(1 << i);
+                    switch (type)
+                    {
+                        case ComponentType.Unit:
+                            AttachComponentToEntity(mergedE, type, subManager.unitComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                        case ComponentType.Commander:
+                            AttachComponentToEntity(mergedE, type, subManager.commanderComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                        case ComponentType.Form:
+                            AttachComponentToEntity(mergedE, type, subManager.formComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                        case ComponentType.Experience:
+                            AttachComponentToEntity(mergedE, type, subManager.experienceComponents[entityComponents[e.Id][i].Id]);
+                            break;
+                    }
+                }
+            }
+            foreach (Entity e in subEntities)
+            {
+                subManager.DestroyEntity(e);
             }
         }
     }

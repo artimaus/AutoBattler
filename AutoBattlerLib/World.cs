@@ -8,7 +8,6 @@ namespace AutoBattlerLib
 {
     public class World
     {
-        EntityManager Entitities;
         EntityComponentManager Components;
     }
 
