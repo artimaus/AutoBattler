@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -143,7 +144,7 @@ namespace AutoBattlerLib
             Array.Sort(tArray, kArray);
             for (int i = 0; i < t.Length; i++)
             {
-                if(!Add(tArray[i], kArray[i]))
+                if (!Add(tArray[i], kArray[i]))
                 {
                     break;
                 }
@@ -231,6 +232,393 @@ namespace AutoBattlerLib
         {
             if (n <= 1) return 1;
             return 1 << (32 - BitOperations.LeadingZeroCount((uint)(n - 1)));
+        }
+    }
+
+    public struct BitFlagMap<T> where T : struct, IEquatable<T>
+    {
+        private int nextIndex;
+        private ulong[] lookup;
+        private T[] values;
+        private int[] reverseIndex; // valueIndex -> key mapping
+
+        private byte bits;
+        private byte pack;
+        private ulong mask;
+
+        public T this[int key]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetValue(key);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                SetValue(key, value);
+            }
+        }
+
+        public BitFlagMap(int keyRange)
+        {
+            bits = 8;
+            pack = 8;
+            mask = (1UL << bits) - 1;
+            nextIndex = 1;
+            lookup = new ulong[(keyRange + 7) / 8];
+            values = new T[256];
+            reverseIndex = new int[256];
+        }
+
+        public BitFlagMap(int keyRange, T[] initialValues)
+        {
+            bits = 8;
+            while (initialValues.Length + 1 > (1 << bits))
+            {
+                bits += 4;
+            }
+            pack = (byte)(64 / bits);
+            mask = (1UL << bits) - 1;
+            nextIndex = 1;
+            lookup = new ulong[(keyRange + pack - 1) / pack];
+            values = new T[1 << bits];
+            reverseIndex = new int[1 << bits];
+
+            // Directly populate without going through SetValues
+            for (int key = 0; key < initialValues.Length; key++)
+            {
+                T value = initialValues[key];
+
+                // Skip default values (they don't need to be stored)
+                if (value.Equals(default(T)))
+                    continue;
+
+                // Direct assignment - we know we have capacity
+                int index = key / pack;
+                int targetBit = (key % pack) * bits;
+                ulong valueIndex = (ulong)nextIndex++;
+
+                lookup[index] |= valueIndex << targetBit;
+                values[valueIndex] = value;
+                reverseIndex[valueIndex] = key;
+            }
+        }
+
+        public BitFlagMap(int keyRange, int[] keys, T[] initialValues)
+        {
+            bits = 8;
+            while (initialValues.Length + 1 > (1 << bits))
+            {
+                bits += 4;
+            }
+            pack = (byte)(64 / bits);
+            mask = (1UL << bits) - 1;
+            nextIndex = 1;
+            lookup = new ulong[(keyRange + pack - 1) / pack];
+            values = new T[1 << bits];
+            reverseIndex = new int[1 << bits];
+
+            SetValues(keys, initialValues);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int CurrentValueNum()
+        {
+            return nextIndex - 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(int key)
+        {
+            int index = key / pack;
+            int targetBit = (key % pack) * bits;
+            ulong valueIndex = (lookup[index] >> targetBit) & mask;
+            return valueIndex > 0 && valueIndex < (ulong)nextIndex; // Check if valueIndex is valid
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T GetValue(int key)
+        {
+            if ((uint)key >= (uint)(lookup.Length * pack)) // Single unsigned comparison
+                return default(T);
+
+            int index = key / pack;
+            int targetBit = (key % pack) * bits;
+            ulong valueIndex = (lookup[index] >> targetBit) & mask;
+
+            // Branchless: return default if valueIndex is 0 or >= nextIndex
+            return (valueIndex > 0 && valueIndex < (ulong)nextIndex) ? values[valueIndex] : default(T);
+        }
+
+        public T Pop()
+        {
+            T poppedValue = GetValue(reverseIndex[1]);
+            if (poppedValue.Equals(default(T)))
+            {
+                return default(T); // Nothing to pop
+            }
+            RemoveValueWithValidKey(reverseIndex[1]);
+            return poppedValue;
+        }
+
+        public int[] GetValidKeys()
+        {
+            int[] result = new int[nextIndex - 1];
+            Array.Copy(reverseIndex, 1, result, 0, nextIndex - 1);
+            return result;
+        }
+
+        public T[] GetValues(int[] keys)
+        {
+            T[] result = new T[keys.Length];
+            int maxKey = lookup.Length * pack;
+
+            for (int i = 0; i < result.Length; i++)
+            {
+                int key = keys[i];
+                if ((uint)key >= (uint)maxKey)
+                {
+                    result[i] = default(T);
+                    continue;
+                }
+
+                int index = key / pack;
+                int targetBit = (key % pack) * bits;
+                ulong valueIndex = (lookup[index] >> targetBit) & mask;
+
+                result[i] = (valueIndex > 0 && valueIndex < (ulong)nextIndex)
+                    ? values[valueIndex]
+                    : default(T);
+            }
+            return result;
+        }
+
+        public bool SetValue(int key, T value)
+        {
+            if ((uint)key >= (uint)(lookup.Length * pack))
+                return false;
+
+            if (value.Equals(default(T)))
+            {
+                RemoveValueWithValidKey(key);
+                return true; // Successfully removed
+            }
+
+            while(nextIndex >= values.Length)
+            {
+                if (bits < 24)
+                {
+                    UpSize();
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            int index = key / pack;
+            int targetBit = (key % pack) * bits;
+            ulong lookupValue = (lookup[index] >> targetBit) & mask;
+
+            if (lookupValue == 0)
+            {
+                lookupValue = (ulong)nextIndex++;
+            }
+
+            lookup[index] = (lookup[index] & ~(mask << targetBit)) | (lookupValue << targetBit);
+            values[lookupValue] = value;
+            reverseIndex[lookupValue] = key;
+            return true;
+        }
+
+        public bool SetValues(int[] keys, T[] values)
+        {
+            if (keys.Length == 0 || keys.Length != values.Length)
+                return false;
+
+            // First pass: handle removals and count new entries needed
+            int potentialNewEntries = 0;
+            bool hasValidNonDefaultKey = false;
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                int key = keys[i];
+
+                if ((uint)key >= (uint)(lookup.Length * pack))
+                    continue; // Invalid key, skip
+
+                if (values[i].Equals(default(T)))
+                {
+                    RemoveValueWithValidKey(key); // Remove if value is default
+                }
+                else
+                {
+                    hasValidNonDefaultKey = true;
+
+                    // Check if this key already exists
+                    int index = key / pack;
+                    int targetBit = (key % pack) * bits;
+                    ulong existingValue = (lookup[index] >> targetBit) & mask;
+                    if (existingValue == 0)
+                        potentialNewEntries++;
+                }
+            }
+
+            if (!hasValidNonDefaultKey)
+                return false; // No valid non-default keys to process
+
+            // Ensure we have capacity for new entries
+            while (nextIndex + potentialNewEntries >= this.values.Length)
+            {
+                if (bits < 24)
+                {
+                    UpSize();
+                }
+                else
+                {
+                    return false; // Can't expand further
+                }
+            }
+
+            // Second pass: set all non-default values
+            for (int i = 0; i < keys.Length; i++)
+            {
+                int key = keys[i];
+
+                if ((uint)key >= (uint)(lookup.Length * pack) || values[i].Equals(default(T)))
+                    continue; // Skip invalid keys and default values (already removed)
+
+                int index = key / pack;
+                int targetBit = (key % pack) * bits;
+                ulong lookupValue = (lookup[index] >> targetBit) & mask;
+
+                if (lookupValue == 0)
+                {
+                    lookupValue = (ulong)nextIndex++;
+                }
+
+                lookup[index] = (lookup[index] & ~(mask << targetBit)) | (lookupValue << targetBit);
+                this.values[lookupValue] = values[i];
+                reverseIndex[lookupValue] = key;
+            }
+
+            return true;
+        }
+
+        private void RemoveValueWithValidKey(int key)
+        {
+            int index = key / pack;
+            int targetBit = (key % pack) * bits;
+            ulong valueIndex = (lookup[index] >> targetBit) & mask;
+            if (valueIndex == 0 || valueIndex >= (ulong)nextIndex)
+            {
+                return; // No value to remove
+            }
+
+            // Clear the lookup entry being removed
+            lookup[index] &= ~(mask << targetBit);
+
+            // If removing the last element, just decrement
+            if (valueIndex == (ulong)nextIndex - 1)
+            {
+                values[valueIndex] = default(T);
+                reverseIndex[valueIndex] = 0;
+                nextIndex--;
+                return;
+            }
+
+            // Move the last element to fill the gap
+            values[valueIndex] = values[nextIndex - 1];
+            reverseIndex[valueIndex] = reverseIndex[nextIndex - 1];
+
+            // Update the lookup for the moved element using reverse lookup (O(1)!)
+            int movedKey = reverseIndex[valueIndex];
+            int movedPos = (movedKey % pack) * bits;
+            lookup[movedKey / pack] = (lookup[movedKey / pack] & ~(mask << movedPos)) | (valueIndex << movedPos);
+
+            // Clear the old last position
+            values[nextIndex - 1] = default(T);
+            reverseIndex[nextIndex - 1] = 0;
+            nextIndex--;
+        }
+
+        public void RemoveValue(int key)
+        {
+            if ((uint)key >= (uint)(lookup.Length * pack))
+            {
+                return;
+            }
+            int index = key / pack;
+            int targetBit = (key % pack) * bits;
+            ulong valueIndex = (lookup[index] >> targetBit) & mask;
+            if (valueIndex == 0 || valueIndex >= (ulong)nextIndex)
+            {
+                return; // No value to remove
+            }
+
+            // Clear the lookup entry being removed
+            lookup[index] &= ~(mask << targetBit);
+
+            // If removing the last element, just decrement
+            if (valueIndex == (ulong)nextIndex - 1)
+            {
+                values[valueIndex] = default(T);
+                reverseIndex[valueIndex] = 0;
+                nextIndex--;
+                return;
+            }
+
+            // Move the last element to fill the gap
+            values[valueIndex] = values[nextIndex - 1];
+            reverseIndex[valueIndex] = reverseIndex[nextIndex - 1];
+
+            // Update the lookup for the moved element using reverse lookup (O(1)!)
+            int movedKey = reverseIndex[valueIndex];
+            int movedPos = (movedKey % pack) * bits;
+            lookup[movedKey / pack] = (lookup[movedKey / pack] & ~(mask << movedPos)) | (valueIndex << movedPos);
+
+            // Clear the old last position
+            values[nextIndex - 1] = default(T);
+            reverseIndex[nextIndex - 1] = 0;
+            nextIndex--;
+        }
+
+        private void UpSize()
+        {
+            if (bits == 0 || bits >= 24)
+                return;
+            byte newBits;
+            if (bits >= 20)
+            {
+                newBits = 24;
+            }
+            else
+            {
+                newBits = (byte)(bits + 4);
+            }
+            byte newPack = (byte)(64 / newBits);
+            T[] newValues = new T[1UL << newBits];
+            int[] newReverseIndex = new int[1UL << newBits];
+
+            // Fix: Calculate correct array length
+            int totalValues = lookup.Length * pack;
+            int newLookupLength = (totalValues + newPack - 1) / newPack; // Ceiling division
+            ulong[] newLookup = new ulong[newLookupLength];
+
+            for (int i = 1; i < nextIndex; i++)
+            {
+                int key = reverseIndex[i];
+                int newIndex = key / newPack;
+                int oldTargetBit = (key % pack) * bits;
+                int newTargetBit = (key % newPack) * newBits;
+                newLookup[newIndex] |= ((lookup[key / pack] >> oldTargetBit) & mask) << newTargetBit;
+                newValues[i] = values[i];
+                newReverseIndex[i] = reverseIndex[i];
+            }
+            lookup = newLookup;
+            values = newValues;
+            reverseIndex = newReverseIndex;
+            bits = newBits;
+            pack = newPack;
+            mask = (1UL << bits) - 1;
         }
     }
 }

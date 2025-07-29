@@ -15,13 +15,29 @@ namespace AutoBattlerLib
         Poison
     }
 
-    public struct ExperienceComponent : IComponentData
+    public struct CoordinatesComponent : IEquatable<CoordinatesComponent>
+    {
+        public short x;
+        public short y;
+
+        public bool Equals(CoordinatesComponent other)
+        {
+            return (x == other.x && y == other.y);
+        }
+    }
+
+    public struct ExperienceComponent : IEquatable<ExperienceComponent>
     {
         public ushort StrikingXP { get; set; }
         public ushort ParryingXP { get; set; }
         public ushort EvasionXP { get; set; }
         public ushort BlockingXP { get; set; }
         public ushort AthleticXP { get; set; }
+
+        public bool Equals(ExperienceComponent other)
+        {
+            return (StrikingXP == other.StrikingXP && ParryingXP == other.ParryingXP && EvasionXP == other.EvasionXP && BlockingXP == other.BlockingXP && AthleticXP == other.AthleticXP);
+        }
     }
 
     public struct TrainingId : IEquatable<TrainingId>
@@ -102,8 +118,9 @@ namespace AutoBattlerLib
         public readonly byte[] BaseAthleticSkill;
     }
 
-    public struct CommanderComponent : IEquatable<CommanderComponent>, IComponentData
+    public struct CommanderComponent : IComponentData<CommanderComponent>, IEquatable<CommanderComponent>
     {
+        
         public ushort Id;
 
         public CommanderComponent(ushort id)
@@ -138,7 +155,7 @@ namespace AutoBattlerLib
         public readonly byte[] MoraleModifier;
     }
 
-    public struct UnitComponent : IEquatable<UnitComponent>, IComparable<UnitComponent>, IComponentData
+    public struct UnitComponent : IEquatable<UnitComponent>, IComparable<UnitComponent>
     {
         public ushort Id;
 
@@ -182,7 +199,7 @@ namespace AutoBattlerLib
         public LoadoutPrototypeId[] Loadout; // Optional, can be 0
     }
 
-    public struct FormComponent : IEquatable<FormComponent>, IComparable<FormComponent>, IComponentData
+    public struct FormComponent : IEquatable<FormComponent>, IComparable<FormComponent>
     {
         public ushort Id;
 

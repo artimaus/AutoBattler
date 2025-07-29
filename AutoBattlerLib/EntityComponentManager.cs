@@ -8,17 +8,17 @@ using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AutoBattlerLib
 {
-
-
     public enum ComponentType : ushort
     {
-        Unit = 1,
-        Commander = 2,
-        Form = 4,
-        Experience = 8
+        Unit = 1 << 0,
+        Commander = 1 << 1,
+        Form = 1 << 2,
+        Experience = 1 << 3,
+        Coordinates = 1 << 4
     }
 
     public struct Entity : IEquatable<Entity>
@@ -78,48 +78,43 @@ namespace AutoBattlerLib
         }
     }
 
-    /// <summary>
-    /// Base interface for all components
-    /// </summary>
-    public interface IComponentData {}
+
+    public interface IComponentData: IEquatable<IComponentData> { }
 
     /// <summary>
     /// Component manager that stores and retrieves components
     /// </summary>
     public class EntityComponentManager
     {
-        public EntityComponentManager() { }
+        public EntityComponentManager(int maxEntities) {
+            entities = new BitFlagArray(maxEntities);
+            unitComponents = new BitFlagMap<UnitComponent>(maxEntities);
+            commanderComponents = new BitFlagMap<CommanderComponent>(maxEntities);
+            formComponents = new BitFlagMap<FormComponent>(maxEntities);
+            experienceComponents = new BitFlagMap<ExperienceComponent>(maxEntities);
+            coordinatesComponents = new BitFlagMap<CoordinatesComponent>(maxEntities);
+            nextEntityId = 1;
 
+            recycledEntities = new BitFlagMap<Entity>(maxEntities);
+            entityArchetypes = new BitFlagMap<ushort>(maxEntities);
+        }
+        private readonly ComponentType[] componentTypes = { ComponentType.Unit, ComponentType.Commander, ComponentType.Form, ComponentType.Experience, ComponentType.Coordinates};
         private BitFlagArray entities; // [maxEntities] true if the entity exists, false if it has been recycled
         private int nextEntityId; // next entity id
 
-        private Entity[] recycledEntities; // [maxEntities / 2] recycled entities
-        private int nextRecycledEntityId; // next recycled entity id
-        private int firstRecycledEntityId; // first recycled entity id
+
+        private BitFlagMap<Entity> recycledEntities;
+        //private Entity[] recycledEntities; // [maxEntities / 2] recycled entities
+        //private int nextRecycledEntityId; // next recycled entity id
+        //private int firstRecycledEntityId; // first recycled entity id
 
         private void EncycleEntity(Entity entity)
         {
-            recycledEntities[nextRecycledEntityId++] = entity;
-
-            if (nextRecycledEntityId >= recycledEntities.Length)
-            {
-                nextRecycledEntityId -= recycledEntities.Length;
-            }
+            recycledEntities.SetValue(entity.Id, entity);
         }
         private Entity DecycleEntity()
         {
-            if (nextRecycledEntityId == firstRecycledEntityId)
-            {
-                return default;
-            }
-
-            Entity entity = recycledEntities[firstRecycledEntityId++];
-            if (firstRecycledEntityId >= recycledEntities.Length)
-            {
-                firstRecycledEntityId -= recycledEntities.Length;
-            }
-
-            return entity;
+            return recycledEntities.Pop();
         }
 
         /// <summary>
@@ -139,7 +134,7 @@ namespace AutoBattlerLib
             Entity id;
 
             // Check if we have recycled IDs available
-            if (firstRecycledEntityId != nextRecycledEntityId)
+            if (recycledEntities.CurrentValueNum() > 0)
             {
                 id = DecycleEntity();
             }
@@ -173,7 +168,7 @@ namespace AutoBattlerLib
         public HashSet<Entity> GetAllEntities()
         {
             HashSet<Entity> activeEntities = new HashSet<Entity>();
-            for (int i = 0; i < nextEntityId; i++)
+            for (int i = 1; i < nextEntityId; i++)
             {
                 if (entities[i])
                 {
@@ -190,115 +185,60 @@ namespace AutoBattlerLib
             return (int)type << 1;
         }
 
-        private ComponentId[][] recycledComponents; // [types][recycledId]
-        private int[] firstRecycledComponentId; // [types]
-        private int[] nextRecycledComponentId; // [types]
-
-        private int[] nextComponentId; //[types]
-
-        private UnitComponent[] unitComponents;
-        private CommanderComponent[] commanderComponents;
-        private FormComponent[] formComponents;
-        private ExperienceComponent[] experienceComponents;
-
-        private Entity[][] componentParentEntity; //[types][ComponentId] the first index is the ComponentType and the second is the ComponentId
-        private ComponentId[][] entityComponents; //[maxEntities][types] the first index is the Entity and the second is the ComponentType
-
-
-
-        private void EncycleComponent(ComponentType type, ComponentId compId)
-        {
-            recycledComponents[Idx(type)][nextRecycledComponentId[Idx(type)]++] = compId;
-            
-            if(nextRecycledComponentId[Idx(type)] >= recycledComponents[Idx(type)].Length)
-            {
-                nextRecycledComponentId[Idx(type)] -= recycledComponents[Idx(type)].Length;
-            }
-        }
-        private ComponentId DecycleComponent(ComponentType type)
-        {
-            if (firstRecycledComponentId[Idx(type)] == nextRecycledComponentId[Idx(type)])
-            {
-                return default;
-            }
-
-            ComponentId compId = recycledComponents[Idx(type)][firstRecycledComponentId[Idx(type)]++];
-            if (firstRecycledComponentId[Idx(type)] >= recycledComponents[Idx(type)].Length)
-            {
-                firstRecycledComponentId[Idx(type)] -= recycledComponents[Idx(type)].Length;
-            }
-
-            return compId;
-        }
-
-        private ComponentId LogNewComponent<T>(ComponentType type, T data) where T : struct, IComponentData
-        {
-            ComponentId compId;
-            if (firstRecycledComponentId[Idx(type)] != nextRecycledComponentId[Idx(type)])
-            {
-                compId = DecycleComponent(type);
-            }
-            else
-            {
-                compId = new ComponentId(nextComponentId[Idx(type)]++);
-            }
-            return LogComponent(compId, data);
-        }
-        private ComponentId LogComponent<T>(ComponentId compId, T data) where T : struct, IComponentData
-        {
-            switch (data)
-            {
-                case UnitComponent compData:
-                    unitComponents[compId.Id] = compData;
-                    break;
-                case CommanderComponent compData:
-                    commanderComponents[compId.Id] = compData;
-                    break;
-                case FormComponent compData:
-                    formComponents[compId.Id] = compData;
-                    break;
-                case ExperienceComponent compData:
-                    experienceComponents[compId.Id] = compData;
-                    break;
-            }
-            return compId;
-        }
-        private void DelogComponent(ComponentType type, ComponentId component)
-        {
-            switch (type) {
-                case ComponentType.Unit:
-                    unitComponents[component.Id] = default;
-                    break;
-                case ComponentType.Commander:
-                    commanderComponents[component.Id] = default;
-                    break;
-                case ComponentType.Form:
-                    formComponents[component.Id] = default;
-                    break;
-                case ComponentType.Experience:
-                    experienceComponents[component.Id] = default;
-                    break;
-            }
-            EncycleComponent(type, component);
-        }
+        private BitFlagMap<ushort> entityArchetypes; // [maxEntities] archetype data for each entity
+        private BitFlagMap<UnitComponent> unitComponents; // [maxEntities] unit component data
+        private BitFlagMap<CommanderComponent> commanderComponents; // [maxEntities] commander component data
+        private BitFlagMap<FormComponent> formComponents; // [maxEntities] form component data
+        private BitFlagMap<ExperienceComponent> experienceComponents; // [maxEntities] experience component data
+        private BitFlagMap<CoordinatesComponent> coordinatesComponents; // [maxEntities] coordinates component data
 
         /// <summary>
         /// Adds a component to an entity
         /// </summary>
-        public ComponentId AttachComponentToEntity<T>(Entity entity, ComponentType type, T data) where T : struct, IComponentData
+        public void AttachComponentToEntity(Entity entity, UnitComponent data) 
         {
-            ComponentId compId;
-            if (HasComponentType(entity, type))
+            if (!EntityExists(entity))
             {
-                compId = LogComponent(entityComponents[entity.Id][Idx(type)], data);
+                return;
             }
-            else
+            unitComponents[entity.Id] = data;
+            entityArchetypes[entity.Id] |= (ushort)ComponentType.Unit;
+        }
+        public void AttachComponentToEntity(Entity entity, CommanderComponent data)
+        {
+            if (!EntityExists(entity))
             {
-                compId = LogNewComponent(type, data);
-                componentParentEntity[Idx(type)][compId.Id] = entity;
-                entityComponents[entity.Id][Idx(type)] = compId;
+                return;
             }
-            return compId;
+            commanderComponents[entity.Id] = data;
+            entityArchetypes[entity.Id] |= (ushort)ComponentType.Commander;
+        }
+        public void AttachComponentToEntity(Entity entity, FormComponent data)
+        {
+            if (!EntityExists(entity))
+            {
+                return;
+            }
+            formComponents[entity.Id] = data;
+            entityArchetypes[entity.Id] |= (ushort)ComponentType.Form;
+        }
+        public void AttachComponentToEntity(Entity entity, ExperienceComponent data)
+        {
+            if (!EntityExists(entity))
+            {
+                return;
+            }
+            experienceComponents[entity.Id] = data;
+            entityArchetypes[entity.Id] |= (ushort)ComponentType.Experience;
+        }
+        public void AttachComponentToEntity(Entity entity, CoordinatesComponent data)
+        {
+            if (!EntityExists(entity))
+            {
+                return;
+            }
+            coordinatesComponents[entity.Id] = data;
+            entityArchetypes[entity.Id] |= (ushort)ComponentType.Coordinates;
         }
 
         /// <summary>
@@ -310,10 +250,29 @@ namespace AutoBattlerLib
             {
                 return;
             }
-            ComponentId compId = entityComponents[entity.Id][Idx(type)];
-            DelogComponent(type, compId);
-            componentParentEntity[Idx(type)][compId.Id] = default;
-            entityComponents[entity.Id][Idx(type)] = default;
+            switch (type)
+            {
+                case ComponentType.Unit:
+                    unitComponents[entity.Id] = default;
+                    entityArchetypes[entity.Id] &= (ushort)~ComponentType.Unit;
+                    break;
+                case ComponentType.Commander:
+                    commanderComponents[entity.Id] = default;
+                    entityArchetypes[entity.Id] &= (ushort)~ComponentType.Commander;
+                    break;
+                case ComponentType.Form:
+                    formComponents[entity.Id] = default;
+                    entityArchetypes[entity.Id] &= (ushort)~ComponentType.Form;
+                    break;
+                case ComponentType.Experience:
+                    experienceComponents[entity.Id] = default;
+                    entityArchetypes[entity.Id] &= (ushort)~ComponentType.Experience;
+                    break;
+                case ComponentType.Coordinates:
+                    coordinatesComponents[entity.Id] = default;
+                    entityArchetypes[entity.Id] &= (ushort)~ComponentType.Coordinates;
+                    break;
+            }
         }
 
         /// <summary>
@@ -321,7 +280,11 @@ namespace AutoBattlerLib
         /// </summary>
         public bool HasComponentType(Entity entity, ComponentType type)
         {
-            return entityComponents[entity.Id][(ushort)type].Id != default;
+            if (!EntityExists(entity))
+            {
+                return false;
+            }
+            return (entityArchetypes[entity.Id] & (ushort)type) != 0;
         }
 
 
@@ -330,29 +293,31 @@ namespace AutoBattlerLib
         /// </summary>
         public HashSet<Entity> GetEntitiesWithComponents(params ComponentType[] types)
         {
+            if (types.Length < 1)
+            {
+                return new HashSet<Entity>();
+            }
+
+            int[] entityIds = entityArchetypes.GetValidKeys();
+            if (entityIds.Length < 1)
+            {
+                return new HashSet<Entity>();
+            }
+
             HashSet<Entity> validEntities = new HashSet<Entity>();
-            Entity current;
+            ushort archetypeMask = 0;
             foreach (ComponentType type in types)
             {
-                for (int i = 0; i < nextComponentId[Idx(type)]; i++)
+                archetypeMask |= (ushort)type;
+            }
+            foreach (int id in entityIds)
+            {
+                if ((archetypeMask & entityArchetypes[id]) == archetypeMask)
                 {
-                    current = componentParentEntity[Idx(type)][i];
-                    if (type == types[0] && current != default)
-                    {
-                        validEntities.Add(current);
-                    }
-                    else if (entityComponents[current.Id][Idx(type)] == default && validEntities.Contains(current))
-                    {
-                        validEntities.Remove(current);
-                    }
+                    validEntities.Add(new Entity(id));
                 }
             }
             return validEntities;
-        }
-
-        public ComponentId[] GetEntityComponents(Entity entity)
-        {
-            return entityComponents[entity.Id];
         }
 
 
@@ -361,41 +326,81 @@ namespace AutoBattlerLib
         /// </summary>
         public void RemoveAllComponents(Entity entity)
         {
-            foreach(ComponentType type in Enum.GetValues(typeof(ComponentType)))
+            foreach(ComponentType type in componentTypes)
             {
-                RemoveComponentFromEntity(entity, type);
+                if (HasComponentType(entity, type))
+                {
+                    RemoveComponentFromEntity(entity, type);
+                }
             }
         }
 
-        public EntityComponentManager ForkSubManager(Entity[] newEntities)
+        public EntityComponentManager ForkSubManager(int maxEntities, Entity[] forkedEntities)
         {
-            EntityComponentManager subManager = new EntityComponentManager();
-            foreach (Entity e in newEntities)
+            EntityComponentManager subManager = new EntityComponentManager(maxEntities);
+            int[] eIds = new int[forkedEntities.Length];
+            Entity[] cachedNewEntities = new Entity[forkedEntities.Length];
+            for (int i = 0; i < forkedEntities.Length; i++)
             {
-                Entity newE = subManager.CreateEntity();
-                for (int i = 0; i < entityComponents.Length; i++)
+                cachedNewEntities[i] = subManager.CreateEntity();
+                eIds[i] = forkedEntities[i].Id;
+            }
+            foreach (ComponentType type in componentTypes)
+            {
+                switch (type)
                 {
-                    ComponentType type = (ComponentType)(1 << i);
-                    switch (type)
-                    {
-                        case ComponentType.Unit:
-                            subManager.AttachComponentToEntity(newE, type, unitComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                        case ComponentType.Commander:
-                            subManager.AttachComponentToEntity(newE, type, commanderComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                        case ComponentType.Form:
-                            subManager.AttachComponentToEntity(newE, type, formComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                        case ComponentType.Experience:
-                            subManager.AttachComponentToEntity(newE, type, experienceComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                    }
+                    case ComponentType.Unit:
+                        UnitComponent[] unitC = unitComponents.GetValues(eIds);
+                        for (int i = 0; i < forkedEntities.Length; i++)
+                        {
+                            subManager.AttachComponentToEntity(cachedNewEntities[i], unitC[i]);
+                            unitC[i] = default;
+                        }
+                        unitComponents.SetValues(eIds, unitC);
+                        break;
+                    case ComponentType.Commander:
+                        CommanderComponent[] commanderC = commanderComponents.GetValues(eIds);
+                        for (int i = 0; i < forkedEntities.Length; i++)
+                        {
+                            subManager.AttachComponentToEntity(cachedNewEntities[i], commanderC[i]);
+                            commanderC[i] = default;
+                        }
+                        commanderComponents.SetValues(eIds, commanderC);
+                        break;
+                    case ComponentType.Form:
+                        FormComponent[] formC = formComponents.GetValues(eIds);
+                        for (int i = 0; i < forkedEntities.Length; i++)
+                        {
+                            subManager.AttachComponentToEntity(cachedNewEntities[i], formC[i]);
+                            formC[i] = default;
+                        }
+                        formComponents.SetValues(eIds, formC);
+                        break;
+                    case ComponentType.Experience:
+                        ExperienceComponent[] experienceC = experienceComponents.GetValues(eIds);
+                        for (int i = 0; i < forkedEntities.Length; i++)
+                        {
+                            subManager.AttachComponentToEntity(cachedNewEntities[i], experienceC[i]);
+                            experienceC[i] = default;
+                        }
+                        experienceComponents.SetValues(eIds, experienceC);
+                        break;
+                    case ComponentType.Coordinates:
+                        CoordinatesComponent[] coordinatesC = coordinatesComponents.GetValues(eIds);
+                        for (int i = 0; i < forkedEntities.Length; i++)
+                        {
+                            subManager.AttachComponentToEntity(cachedNewEntities[i], coordinatesC[i]);
+                            coordinatesC[i] = default;
+                        }
+                        coordinatesComponents.SetValues(eIds, coordinatesC);
+                        break;
                 }
             }
-            foreach (Entity e in newEntities)
+            foreach (Entity e in forkedEntities)
             {
-                DestroyEntity(e);
+                entities[e.Id] = false;
+                entityArchetypes[e.Id] = 0;
+                EncycleEntity(e);
             }
             return subManager;
         }
@@ -403,32 +408,72 @@ namespace AutoBattlerLib
         public void MergeSubManager(EntityComponentManager subManager)
         {
             Entity[] subEntities = subManager.GetAllEntities().ToArray();
-            foreach (Entity e in subEntities)
+            int[] subIds = new int[subEntities.Length];
+            Entity[] cachedNewEntities = new Entity[subEntities.Length];
+            for (int i = 0; i < subEntities.Length; i++)
             {
-                Entity mergedE = CreateEntity();
-                for (int i = 0; i < entityComponents.Length; i++)
+                cachedNewEntities[i] = CreateEntity();
+                subIds[i] = subEntities[i].Id;
+            }
+            foreach (ComponentType type in componentTypes)
+            {
+                switch (type)
                 {
-                    ComponentType type = (ComponentType)(1 << i);
-                    switch (type)
-                    {
-                        case ComponentType.Unit:
-                            AttachComponentToEntity(mergedE, type, subManager.unitComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                        case ComponentType.Commander:
-                            AttachComponentToEntity(mergedE, type, subManager.commanderComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                        case ComponentType.Form:
-                            AttachComponentToEntity(mergedE, type, subManager.formComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                        case ComponentType.Experience:
-                            AttachComponentToEntity(mergedE, type, subManager.experienceComponents[entityComponents[e.Id][i].Id]);
-                            break;
-                    }
+                    case ComponentType.Unit:
+                        UnitComponent[] unitC = subManager.unitComponents.GetValues(subIds);
+                        for (int i = 0; i < subEntities.Length; i++)
+                        {
+                            AttachComponentToEntity(cachedNewEntities[i], unitC[i]);
+                            unitC[i] = default;
+                        }
+                        subManager.unitComponents.SetValues(subIds, unitC);
+                        break;
+                    case ComponentType.Commander:
+                        CommanderComponent[] commanderC = subManager.commanderComponents.GetValues(subIds);
+                        for (int i = 0; i < subEntities.Length; i++)
+                        {
+                            AttachComponentToEntity(cachedNewEntities[i], commanderC[i]);
+                            commanderC[i] = default;
+                        }
+                        subManager.commanderComponents.SetValues(subIds, commanderC);
+                        break;
+                    case ComponentType.Form:
+                        FormComponent[] formC = subManager.formComponents.GetValues(subIds);
+                        for (int i = 0; i < subEntities.Length; i++)
+                        {
+                            AttachComponentToEntity(cachedNewEntities[i], formC[i]);
+                            formC[i] = default;
+                        }
+                        subManager.formComponents.SetValues(subIds, formC);
+                        break;
+                    case ComponentType.Experience:
+                        ExperienceComponent[] experienceC = subManager.experienceComponents.GetValues(subIds);
+                        for (int i = 0; i < subEntities.Length; i++)
+                        {
+                            AttachComponentToEntity(cachedNewEntities[i], experienceC[i]);
+                            experienceC[i] = default;
+                        }
+                        subManager.experienceComponents.SetValues(subIds, experienceC);
+                        break;
+                    case ComponentType.Coordinates:
+                        CoordinatesComponent[] coordinatesC = subManager.coordinatesComponents.GetValues(subIds);
+                        for (int i = 0; i < subEntities.Length; i++)
+                        {
+                            AttachComponentToEntity(cachedNewEntities[i], coordinatesC[i]);
+                            coordinatesC[i] = default;
+                        }
+                        subManager.coordinatesComponents.SetValues(subIds, coordinatesC);
+                        break;
                 }
             }
             foreach (Entity e in subEntities)
             {
-                subManager.DestroyEntity(e);
+                if (subManager.EntityExists(e)) 
+                {
+                    subManager.entities[e.Id] = false;
+                    subManager.entityArchetypes[e.Id] = 0;
+                    subManager.EncycleEntity(e);
+                }
             }
         }
     }
