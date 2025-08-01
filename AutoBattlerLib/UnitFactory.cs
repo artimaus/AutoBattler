@@ -29,8 +29,8 @@ namespace AutoBattlerLib
             }
             var formId = Prototypes.unitPrototypes.FirstForm[unitComp.Id];
             var entity = _EntityComponentManager.CreateEntity();
-            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Unit, unitComp);
-            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Form, formId);
+            _EntityComponentManager.AttachComponentToEntity(entity, unitComp);
+            _EntityComponentManager.AttachComponentToEntity(entity, formId);
             AddExperienceComponent(entity, unitComp);
             return entity;
         }
@@ -42,7 +42,7 @@ namespace AutoBattlerLib
                 return default;
             }
             var entity = CreateUnit(prototypeId);
-            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Commander, commandId);
+            _EntityComponentManager.AttachComponentToEntity(entity, commandId);
             return entity;
         }
 
@@ -99,7 +99,7 @@ namespace AutoBattlerLib
                 BlockingXP = Prototypes.trainingPrototypes.BaseBlockingXP[trainingId.Id],
                 AthleticXP = Prototypes.trainingPrototypes.BaseAthleticXP[trainingId.Id]
             };
-            _EntityComponentManager.AttachComponentToEntity(entity, ComponentType.Experience, experience);
+            _EntityComponentManager.AttachComponentToEntity(entity, experience);
         }
     }
 }
