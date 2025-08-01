@@ -20,6 +20,7 @@ namespace AutoBattlerLib
 
         public struct BattleScheduler
         {
+            private BitFlagMap<Entity>[][] tickSchedule;
             private BitFlagArray[][] tickEntities;// [4][10][1000]
             private ushort[][] tickedEntityCount; //[4][10]
             private ulong[] entitySchedule; //[4000]
